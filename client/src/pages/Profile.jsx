@@ -87,10 +87,10 @@ export default function Profile() {
   const unlockedCount = achievements.filter(a => a.unlocked).length;
 
   return (
-    <AppLayout title="Profile">
+    <>
       <ToastContainer />
-      <h1 className="section-title">My Profile</h1>
-      <p className="section-sub">Account details, achievements, and sustainability stats.</p>
+      <h1 className="page-title">My Profile</h1>
+      <p className="page-desc">Account details, achievements, and sustainability stats.</p>
 
       {loading ? (
         <div className="page-loader" style={{ minHeight: 300 }}><div className="loader-ring" /></div>
@@ -100,7 +100,7 @@ export default function Profile() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
               {/* User card */}
-              <div className="glass-card">
+              <div className="card">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.25rem' }}>
                   <div className="avatar" style={{ width: 64, height: 64, fontSize: '1.25rem' }}>{user?.avatar}</div>
                   <div>
@@ -160,7 +160,7 @@ export default function Profile() {
               </div>
 
               {/* Change password */}
-              <div className="glass-card">
+              <div className="card">
                 <div style={{ fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                   <Lock size={15} color="var(--cyan)" /> Change Password
                 </div>
@@ -182,7 +182,7 @@ export default function Profile() {
             </div>
 
             {/* Stats */}
-            <div className="glass-card">
+            <div className="card">
               <div style={{ fontWeight: 600, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <BarChart3 size={16} color="var(--cyan)" /> Sustainability Stats
               </div>
@@ -206,7 +206,7 @@ export default function Profile() {
 
           {/* Achievements */}
           {achievements.length > 0 && (
-            <div className="glass-card">
+            <div className="card">
               <div style={{ fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Trophy size={16} color="var(--amber)" />
@@ -226,6 +226,6 @@ export default function Profile() {
           )}
         </div>
       )}
-    </AppLayout>
+    </>
   );
 }

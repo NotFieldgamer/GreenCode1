@@ -88,10 +88,10 @@ function GeneratorContent() {
 
       {/* Header */}
       <div style={{ marginBottom: '1.5rem' }}>
-        <h1 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Sparkles size={20} color="#a78bfa" /> Green Code Generator
         </h1>
-        <p className="section-sub">
+        <p className="page-desc">
           Describe any function in plain English &rarr; get the most energy-efficient implementation.
           {' '}
           <span style={{ color: 'var(--amber)', fontWeight: 600 }}>
@@ -103,7 +103,7 @@ function GeneratorContent() {
       </div>
 
       {/* Input area */}
-      <div className="glass-card" style={{ marginBottom: '1.25rem' }}>
+      <div className="card" style={{ marginBottom: '1.25rem' }}>
         <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
           Describe what you need
         </div>
@@ -174,7 +174,7 @@ function GeneratorContent() {
 
       {/* Loading skeleton */}
       {loading && (
-        <div className="glass-card" style={{ textAlign: 'center', padding: '3rem' }}>
+        <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
           <div style={{ marginBottom: '0.75rem', display: 'flex', justifyContent: 'center' }}>
             <Settings size={32} color="var(--cyan)" style={{ animation: 'spin 1.5s linear infinite' }} />
           </div>
@@ -188,7 +188,7 @@ function GeneratorContent() {
       {result && !loading && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {/* Meta row */}
-          <div className="glass-card" style={{ padding: '1rem 1.25rem' }}>
+          <div className="card" style={{ padding: '1rem 1.25rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: 200 }}>
                 <div style={{ fontWeight: 600, marginBottom: '0.2rem' }}>{result.description}</div>
@@ -210,7 +210,7 @@ function GeneratorContent() {
           </div>
 
           {/* Explanation */}
-          <div className="glass-card" style={{ padding: '1rem 1.25rem', background: 'rgba(0,255,136,0.03)', border: '1px solid rgba(0,255,136,0.12)' }}>
+          <div className="card" style={{ padding: '1rem 1.25rem', background: 'rgba(0,255,136,0.03)', border: '1px solid rgba(0,255,136,0.12)' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--green)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
               <Lightbulb size={13} /> Why this is optimal
             </div>
@@ -248,7 +248,7 @@ function GeneratorContent() {
 
           {/* Alternatives */}
           {result.alternatives?.length > 0 && (
-            <div className="glass-card">
+            <div className="card">
               <button
                 onClick={() => setShowAlts(s => !s)}
                 style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', width: '100%', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 600, fontSize: '0.875rem' }}
@@ -282,7 +282,7 @@ function GeneratorContent() {
 
       {/* Empty state */}
       {!result && !loading && (
-        <div className="glass-card" style={{ textAlign: 'center', padding: '3rem' }}>
+        <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
             <Code2 size={40} color="var(--green)" style={{ opacity: 0.5 }} />
           </div>
@@ -300,20 +300,20 @@ export default function Generator() {
   const { isPro, isEnterprise } = useSubscription();
 
   return (
-    <AppLayout title="Code Generator">
+    <>
       {isPro || isEnterprise ? (
         <GeneratorContent />
       ) : (
         <div>
           <div style={{ marginBottom: '1.5rem' }}>
-            <h1 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Sparkles size={20} color="#a78bfa" /> Green Code Generator
             </h1>
-            <p className="section-sub">Generate the most energy-efficient code for any function. Pro &amp; Enterprise feature.</p>
+            <p className="page-desc">Generate the most energy-efficient code for any function. Pro &amp; Enterprise feature.</p>
           </div>
           <PremiumGate feature="generator" requiredPlan="pro">
             {/* Preview */}
-            <div className="glass-card" style={{ opacity: 0.5, pointerEvents: 'none' }}>
+            <div className="card" style={{ opacity: 0.5, pointerEvents: 'none' }}>
               <div style={{ marginBottom: '0.75rem', fontWeight: 600 }}>Describe what you need</div>
               <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 12, border: '1px solid var(--glass-border)', padding: '1rem', color: 'var(--text-muted)', height: 80 }}>
                 Find duplicates in an array...
@@ -325,6 +325,6 @@ export default function Generator() {
           </PremiumGate>
         </div>
       )}
-    </AppLayout>
+    </>
   );
 }

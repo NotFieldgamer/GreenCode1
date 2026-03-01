@@ -1,36 +1,51 @@
+import './index.css';
+
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './context/AuthContext';
-import { SubscriptionProvider } from './hooks/useSubscription';
-import { ProtectedRoute } from './components/ProtectedRoute';
-import Landing     from './pages/Landing';
-import Login       from './pages/Login';
-import Register    from './pages/Register';
-import Dashboard   from './pages/Dashboard';
-import Analyzer    from './pages/Analyzer';
-import Admin       from './pages/Admin';
-import Profile     from './pages/Profile';
+
+import ProtectedRoute from './components/ProtectedRoute';
+import AppLayout from './components/AppLayout';
+
+import Landing from './pages/Landing';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Pricing from './pages/Pricing';
+
+import Dashboard from './pages/Dashboard';
+import Analyzer from './pages/Analyzer';
+import Generator from './pages/Generator';
 import Leaderboard from './pages/Leaderboard';
-import Generator   from './pages/Generator';
-import Pricing     from './pages/Pricing';
+import Profile from './pages/Profile';
+import Admin from './pages/Admin';
+
 
 export default function App() {
-  const { isAuthenticated } = useAuth();
   return (
-    <SubscriptionProvider>
     <Routes>
-      <Route path="/"         element={<Landing />} />
-      <Route path="/login"    element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login />} />
-      <Route path="/register" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Register />} />
-      <Route path="/dashboard"   element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/analyzer"    element={<ProtectedRoute><Analyzer /></ProtectedRoute>} />
-      <Route path="/admin"       element={<ProtectedRoute adminOnly><Admin /></ProtectedRoute>} />
-      <Route path="/profile"     element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-      <Route path="/leaderboard" element={<Leaderboard />} />
-      <Route path="/generator"   element={<ProtectedRoute><Generator /></ProtectedRoute>} />
-      <Route path="/pricing"     element={<Pricing />} />
-      <Route path="*"            element={<Navigate to="/" />} />
+
+      {/* PUBLIC */}
+      <Route path="/" element={<Landing />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/pricing" element={<Pricing />} />
+
+      {/* PROTECTED AREA */}
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppLayout />}>
+
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/analyzer" element={<Analyzer />} />
+          <Route path="/generator" element={<Generator />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/admin" element={<Admin />} />
+
+        </Route>
+      </Route>
+
+      {/* FALLBACK */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+
     </Routes>
-    </SubscriptionProvider>
   );
 }

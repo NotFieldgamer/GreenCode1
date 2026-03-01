@@ -86,11 +86,11 @@ export default function Admin() {
   const SEV_MAP = { high: 'badge-high', medium: 'badge-medium', low: 'badge-low' };
 
   return (
-    <AppLayout title="Admin Panel">
+    <>
       <ToastContainer />
       <div style={{ marginBottom: '1.5rem' }}>
-        <h1 className="section-title"><MdShield style={{ verticalAlign: 'middle', color: 'var(--purple)' }} /> Admin Panel</h1>
-        <p className="section-sub">Platform-wide analytics, user management, and detection logs.</p>
+        <h1 className="page-title"><MdShield style={{ verticalAlign: 'middle', color: 'var(--purple)' }} /> Admin Panel</h1>
+        <p className="page-desc">Platform-wide analytics, user management, and detection logs.</p>
       </div>
 
       <div className="tab-bar">
@@ -211,7 +211,7 @@ export default function Admin() {
           {tab === 'Subscriptions' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               {/* Revenue summary */}
-              <div className="glass-card" style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', padding: '1.5rem', background: 'linear-gradient(135deg,rgba(124,58,237,0.1),rgba(0,212,255,0.06))', border: '1px solid rgba(124,58,237,0.2)' }}>
+              <div className="card" style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', padding: '1.5rem', background: 'linear-gradient(135deg,rgba(124,58,237,0.1),rgba(0,212,255,0.06))', border: '1px solid rgba(124,58,237,0.2)' }}>
                 <div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 4 }}>Monthly Revenue</div>
                   <div style={{ fontSize: '2rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#a78bfa' }}>${subs.monthlyRevenue}</div>
@@ -321,7 +321,7 @@ export default function Admin() {
           {tab === 'Energy' && stats && (
             <>
               <div style={{ marginBottom: '1.5rem' }}>
-                <div className="glass-card" style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', padding: '1.5rem' }}>
+                <div className="card" style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', padding: '1.5rem' }}>
                   <div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 4 }}>Total Platform Energy</div>
                     <div style={{ fontSize: '2rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--amber)' }}>{stats.totalEnergy} <span style={{ fontSize: '0.9rem', fontWeight: 400 }}>units</span></div>
@@ -350,6 +350,6 @@ export default function Admin() {
           )}
         </>
       )}
-    </AppLayout>
+    </>
   );
 }

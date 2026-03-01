@@ -67,7 +67,7 @@ export default function ComplexityChart({ detected = 'O(n)', energyCostKwh = 0 }
   const costAtN     = (energyCostKwh * nVal).toFixed(6);
 
   return (
-    <div className="glass-card" style={{ marginTop: '1rem' }}>
+    <div className="card" style={{ marginTop: '1rem' }}>
       {/* Header / toggle */}
       <div
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
