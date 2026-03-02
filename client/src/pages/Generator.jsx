@@ -298,6 +298,8 @@ function GeneratorContent() {
 
 export default function Generator() {
   const { isPro, isEnterprise } = useSubscription();
+  console.log('SUB:', {isPro, isEnterprise});
+
 
   return (
     <>

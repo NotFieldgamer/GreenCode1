@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext, createContext } from 'react';
 import React from 'react';
 import api from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 
 const SubscriptionContext = createContext(null);
 
@@ -58,6 +59,7 @@ const DEFAULT = {
    Provider
    ===================================================== */
 export function SubscriptionProvider({ children }) {
+  const { user } = useAuth();
   const [sub, setSub] = useState({ ...DEFAULT });
 
   async function refresh() {
@@ -138,7 +140,7 @@ export function SubscriptionProvider({ children }) {
     window.addEventListener('storage', onStorage);
     return () =>
       window.removeEventListener('storage', onStorage);
-  }, []);
+  }, [user]);
 
   const value = {
     ...sub,

@@ -4,6 +4,7 @@ import api from '../utils/api';
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
+  const [authVersion , setAuthVersion] = useState(0);
   const [user, setUser]       = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -19,6 +20,7 @@ export function AuthProvider({ children }) {
     localStorage.setItem('gc_token', data.token);
     localStorage.setItem('gc_user',  JSON.stringify(data.user));
     setUser(data.user);
+    setAuthVersion(v => v+1);
     return data.user;
   }
 
@@ -27,13 +29,16 @@ export function AuthProvider({ children }) {
     localStorage.setItem('gc_token', data.token);
     localStorage.setItem('gc_user',  JSON.stringify(data.user));
     setUser(data.user);
+    setAuthVersion(v => v+1);
     return data.user;
   }
 
   function logout() {
     localStorage.removeItem('gc_token');
     localStorage.removeItem('gc_user');
+
     setUser(null);
+    setAuthVersion(v => v+1);
   }
 
   return (
@@ -45,6 +50,8 @@ export function AuthProvider({ children }) {
       login,
       register,
       logout,
+      authVersion,
+      
     }}>
       {children}
     </AuthContext.Provider>

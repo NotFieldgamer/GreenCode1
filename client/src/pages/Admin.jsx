@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSubscription } from '../hooks/useSubscription';
 import {
   BarChart, Bar, PieChart, Pie, Cell,
   CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer
@@ -11,7 +12,7 @@ import AppLayout from '../components/AppLayout';
 import { toast, ToastContainer } from '../components/Toast';
 import api from '../utils/api';
 
-const PIE_COLORS = ['#ef4444','#f59e0b','#00d4ff','#7c3aed','#00ff88','#ec4899'];
+const PIE_COLORS = ['#ef4444', '#f59e0b', '#00d4ff', '#7c3aed', '#00ff88', '#ec4899'];
 const TABS = ['Overview', 'Users', 'Detections', 'Subscriptions', 'Energy'];
 
 function CustomTooltip({ active, payload, label }) {
@@ -25,12 +26,13 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 export default function Admin() {
-  const [tab, setTab]             = useState('Overview');
-  const [stats, setStats]         = useState(null);
-  const [users, setUsers]         = useState([]);
+  const [tab, setTab] = useState('Overview');
+  const [stats, setStats] = useState(null);
+  const [users, setUsers] = useState([]);
+  const { refresh } = useSubscription();
   const [detections, setDetections] = useState([]);
-  const [subs, setSubs]           = useState({ subscriptions: [], monthlyRevenue: '0.00', PLANS: {} });
-  const [loading, setLoading]     = useState(true);
+  const [subs, setSubs] = useState({ subscriptions: [], monthlyRevenue: '0.00', PLANS: {} });
+  const [loading, setLoading] = useState(true);
   const [creditInputs, setCreditInputs] = useState({});
 
   useEffect(() => {
@@ -66,18 +68,35 @@ export default function Admin() {
   }
 
   async function changePlan(userId, plan) {
-    try {
-      await api.put(`/admin/users/${userId}/plan`, { plan });
-      setSubs(s => ({ ...s, subscriptions: s.subscriptions.map(u => u.id === userId ? { ...u, plan, planName: subs.PLANS[plan]?.name } : u) }));
-      toast(`Plan updated to ${plan}`, 'success');
-    } catch { toast('Plan update failed', 'error'); }
+  try {
+    await api.put(`/admin/users/${userId}/plan`, { plan });
+
+    // update admin table
+    setSubs(s => ({
+      ...s,
+      subscriptions: s.subscriptions.map(u =>
+        u.id === userId
+          ? { ...u, plan, planName: s.PLANS?.[plan]?.name }
+          : u
+      )
+    }));
+
+    // ⭐ CRITICAL — refresh logged-in subscription
+    await refresh();
+
+    toast(`Plan updated to ${plan}`, 'success');
+
+  } catch {
+    toast('Plan update failed', 'error');
   }
+}
 
   async function grantCredits(userId, amount) {
     if (!amount) return;
     try {
       const { data } = await api.put(`/admin/users/${userId}/credits`, { amount: parseInt(amount) });
       setSubs(s => ({ ...s, subscriptions: s.subscriptions.map(u => u.id === userId ? { ...u, credits: data.credits } : u) }));
+      await refresh();
       setCreditInputs(p => ({ ...p, [userId]: '' }));
       toast(`Granted ${amount} credits`, 'success');
     } catch { toast('Grant failed', 'error'); }
@@ -96,11 +115,11 @@ export default function Admin() {
       <div className="tab-bar">
         {TABS.map(t => (
           <button key={t} className={`tab${tab === t ? ' active' : ''}`} onClick={() => setTab(t)}>
-            {t === 'Overview'       && <MdGpsFixed />}
-            {t === 'Users'         && <MdPeople />}
-            {t === 'Detections'    && <MdCode />}
+            {t === 'Overview' && <MdGpsFixed />}
+            {t === 'Users' && <MdPeople />}
+            {t === 'Detections' && <MdCode />}
             {t === 'Subscriptions' && <MdDiamond />}
-            {t === 'Energy'        && <MdBolt />}
+            {t === 'Energy' && <MdBolt />}
             {t}
           </button>
         ))}
@@ -115,10 +134,10 @@ export default function Admin() {
             <>
               <div className="stats-grid">
                 {[
-                  { label: 'Total Users',     value: stats.totalUsers,    color: 'green',  icon: <MdPeople /> },
-                  { label: 'Total Analyses',  value: stats.totalAnalyses, color: 'cyan',   icon: <MdCode /> },
-                  { label: 'Total Energy',    value: stats.totalEnergy,   color: 'amber',  icon: <MdBolt /> },
-                  { label: 'Avg Sust. Score', value: stats.avgScore,      color: 'purple', icon: <MdShield /> },
+                  { label: 'Total Users', value: stats.totalUsers, color: 'green', icon: <MdPeople /> },
+                  { label: 'Total Analyses', value: stats.totalAnalyses, color: 'cyan', icon: <MdCode /> },
+                  { label: 'Total Energy', value: stats.totalEnergy, color: 'amber', icon: <MdBolt /> },
+                  { label: 'Avg Sust. Score', value: stats.avgScore, color: 'purple', icon: <MdShield /> },
                 ].map(s => (
                   <div className={`stat-card ${s.color}`} key={s.label}>
                     <div className={`stat-icon ${s.color}`}>{s.icon}</div>
@@ -137,7 +156,7 @@ export default function Admin() {
                       <XAxis dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} />
                       <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} />
                       <Tooltip content={<CustomTooltip />} />
-                      <Bar dataKey="analyses" fill="#00d4ff" radius={[4,4,0,0]} name="Analyses" />
+                      <Bar dataKey="analyses" fill="#00d4ff" radius={[4, 4, 0, 0]} name="Analyses" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -264,7 +283,7 @@ export default function Admin() {
                             className="lang-select"
                             style={{ background: 'var(--neu-bg)', color: 'var(--text-primary)' }}
                           >
-                            {['free','pro','enterprise'].map(p => <option key={p} value={p}>{p}</option>)}
+                            {['free', 'pro', 'enterprise'].map(p => <option key={p} value={p}>{p}</option>)}
                           </select>
                         </td>
                         <td>
@@ -307,7 +326,7 @@ export default function Admin() {
                   {detections.map(d => (
                     <tr key={d.id}>
                       <td>{d.userName}</td>
-                      <td><span className="mono">{d.type.replace(/_/g,' ')}</span></td>
+                      <td><span className="mono">{d.type.replace(/_/g, ' ')}</span></td>
                       <td><span className={`badge ${SEV_MAP[d.severity]}`}>{d.severity}</span></td>
                       <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{new Date(d.timestamp).toLocaleString()}</td>
                     </tr>
@@ -340,7 +359,7 @@ export default function Admin() {
                     <XAxis type="number" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} />
                     <YAxis type="category" dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} width={60} />
                     <Tooltip content={<CustomTooltip />} />
-                    <Bar dataKey="energy" fill="url(#energyGradAdmin)" radius={[0,4,4,0]} name="Energy">
+                    <Bar dataKey="energy" fill="url(#energyGradAdmin)" radius={[0, 4, 4, 0]} name="Energy">
                       {stats.energyPerUser.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                     </Bar>
                   </BarChart>
