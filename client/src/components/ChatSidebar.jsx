@@ -1,14 +1,88 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Send, Bot } from 'lucide-react';
+import { X, Send, Bot, Sparkles } from 'lucide-react';
 import api from '../utils/api';
+
+/* ================= THEME CONSTANTS ================= */
+const NEON_GREEN = '#00ffcc';
+const NEON_CYAN = '#00d4ff';
+
+/* ================= INJECTED STYLES ================= */
+const chatStyles = `
+  @keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  
+  @keyframes bounceDot {
+    0%, 100% { transform: translateY(0); opacity: 0.4; }
+    50% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  @keyframes pulseGlow {
+    0% { box-shadow: 0 0 0 0 rgba(0, 255, 204, 0.4); }
+    70% { box-shadow: 0 0 0 6px rgba(0, 255, 204, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 255, 204, 0); }
+  }
+
+  .chat-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+  .chat-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .chat-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+  }
+  .chat-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .chat-input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    outline: none;
+    transition: all 0.2s;
+  }
+  .chat-input:focus {
+    border-color: ${NEON_CYAN};
+    background: rgba(0, 0, 0, 0.6);
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.15);
+  }
+  .chat-input::placeholder {
+    color: #6b7280;
+  }
+
+  .quick-reply-btn {
+    background: rgba(0, 212, 255, 0.05);
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    border-radius: 100px;
+    color: ${NEON_CYAN};
+    padding: 0.4rem 0.75rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .quick-reply-btn:hover {
+    background: rgba(0, 212, 255, 0.15);
+    border-color: ${NEON_CYAN};
+    transform: translateY(-1px);
+  }
+`;
 
 function TypingDots() {
   return (
-    <div style={{ display: 'flex', gap: 4, alignItems: 'center', padding: '0.5rem 0' }}>
-      {[0,1,2].map(i => (
+    <div style={{ display: 'flex', gap: '4px', alignItems: 'center', padding: '0.5rem 0' }}>
+      {[0, 1, 2].map(i => (
         <span key={i} style={{
-          width: 6, height: 6, borderRadius: '50%', background: 'var(--cyan)',
-          animation: `pulse 1s ease ${i * 0.2}s infinite`,
+          width: '6px', height: '6px', borderRadius: '50%', background: NEON_CYAN,
+          animation: `bounceDot 1s ease-in-out ${i * 0.15}s infinite`,
           display: 'inline-block',
         }} />
       ))}
@@ -19,33 +93,39 @@ function TypingDots() {
 function MessageBubble({ msg }) {
   const isAI = msg.role === 'ai';
   return (
-    <div style={{ display: 'flex', justifyContent: isAI ? 'flex-start' : 'flex-end', marginBottom: '0.75rem' }}>
+    <div style={{ display: 'flex', justifyContent: isAI ? 'flex-start' : 'flex-end', marginBottom: '1rem' }}>
       {isAI && (
         <div style={{
-          width: 28, height: 28, borderRadius: '50%', flexShrink: 0, marginRight: '0.5rem', marginTop: 4,
-          background: 'var(--green)',
+          width: 28, height: 28, borderRadius: '8px', flexShrink: 0, marginRight: '0.75rem', marginTop: 2,
+          background: `linear-gradient(135deg, ${NEON_GREEN}, ${NEON_CYAN})`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: `0 2px 10px rgba(0, 255, 204, 0.2)`
         }}>
-          <Bot size={14} color="#000" />
+          <Bot size={16} color="#000" />
         </div>
       )}
       <div style={{
-        maxWidth: '80%',
-        background: isAI ? 'rgba(0,212,255,0.08)' : 'rgba(0,255,136,0.1)',
-        border: `1px solid ${isAI ? 'rgba(0,212,255,0.2)' : 'rgba(0,255,136,0.2)'}`,
+        maxWidth: '82%',
+        background: isAI ? 'rgba(0, 212, 255, 0.05)' : 'rgba(0, 255, 204, 0.05)',
+        border: `1px solid ${isAI ? 'rgba(0, 212, 255, 0.2)' : 'rgba(0, 255, 204, 0.2)'}`,
         borderRadius: isAI ? '4px 14px 14px 14px' : '14px 4px 14px 14px',
-        padding: '0.65rem 0.9rem',
-        fontSize: '0.82rem',
-        lineHeight: 1.65,
-        color: 'var(--text-primary)',
+        padding: '0.75rem 1rem',
+        fontSize: '0.85rem',
+        lineHeight: 1.6,
+        color: '#e5e7eb',
         whiteSpace: 'pre-wrap',
         wordBreak: 'break-word',
+        boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
       }}>
         {msg.text}
         {msg.suggestions?.length > 0 && (
-          <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+          <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0.75rem' }}>
             {msg.suggestions.map((s, i) => (
-              <span key={i} style={{ fontSize: '0.75rem', color: 'var(--cyan)', borderLeft: '2px solid var(--cyan)', paddingLeft: '0.5rem' }}>{s}</span>
+              <span key={i} style={{ 
+                fontSize: '0.75rem', color: NEON_CYAN, display: 'flex', alignItems: 'flex-start', gap: '0.4rem' 
+              }}>
+                <Sparkles size={12} style={{ marginTop: '2px', flexShrink: 0 }} /> {s}
+              </span>
             ))}
           </div>
         )}
@@ -54,19 +134,19 @@ function MessageBubble({ msg }) {
   );
 }
 
-const QUICK = ['Why is my score low?', 'How do I fix nested loops?', 'What does O(n\u00b2) mean?', 'How much CO\u2082 can I save?'];
+const QUICK = ['Why is my score low?', 'How do I fix nested loops?', 'What does O(n²) mean?', 'Estimate CO₂ savings'];
 
 export default function ChatSidebar({ open, onClose, analysisContext }) {
   const [messages, setMessages] = useState([
-    { role: 'ai', text: 'Hi! I\'m the GreenCode AI. Ask me anything about your code\'s energy efficiency, complexity, or sustainability impact!', suggestions: [] },
+    { role: 'ai', text: 'Hi! I am the GreenCode AI. Ask me anything about your code\'s energy efficiency, complexity, or sustainability impact!', suggestions: [] },
   ]);
-  const [input, setInput]     = useState('');
+  const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading]);
+  }, [messages, loading, open]);
 
   async function sendMessage(text) {
     const msg = text || input.trim();
@@ -78,7 +158,7 @@ export default function ChatSidebar({ open, onClose, analysisContext }) {
       const { data } = await api.post('/chat', { message: msg, context: analysisContext || {} });
       setMessages(prev => [...prev, { role: 'ai', text: data.reply, suggestions: data.suggestions }]);
     } catch {
-      setMessages(prev => [...prev, { role: 'ai', text: 'Sorry, something went wrong. Please try again.' }]);
+      setMessages(prev => [...prev, { role: 'ai', text: 'Sorry, my connection to the server was interrupted. Please try again.' }]);
     } finally { setLoading(false); }
   }
 
@@ -86,73 +166,81 @@ export default function ChatSidebar({ open, onClose, analysisContext }) {
 
   return (
     <>
+      <style>{chatStyles}</style>
+      
       {/* Backdrop */}
-      <div
-        onClick={onClose}
-        style={{ position: 'fixed', inset: 0, zIndex: 199, background: 'transparent' }}
-      />
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 199, background: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(2px)' }} />
+      
       {/* Panel */}
       <div style={{
         position: 'fixed', bottom: 90, right: 24, zIndex: 200,
-        width: 360, height: 520,
-        background: 'rgba(8, 8, 25, 0.97)',
+        width: 380, height: 600, maxHeight: 'calc(100vh - 120px)',
+        background: 'rgba(10, 10, 20, 0.85)',
         backdropFilter: 'blur(24px)',
-        border: '1px solid var(--glass-border)',
+        WebkitBackdropFilter: 'blur(24px)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
         borderRadius: '20px',
         display: 'flex', flexDirection: 'column',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(0,212,255,0.06)',
-        animation: 'slideInRight 0.25s ease',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.1)',
+        animation: 'slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
       }}>
+        
         {/* Header */}
-        <div style={{ padding: '1rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--green)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Bot size={16} color="#000" />
+        <div style={{ 
+          padding: '1.25rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', 
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: 'rgba(255, 255, 255, 0.02)', borderRadius: '20px 20px 0 0'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ position: 'relative' }}>
+              <div style={{ width: 36, height: 36, borderRadius: '10px', background: 'rgba(0, 255, 204, 0.1)', border: `1px solid rgba(0, 255, 204, 0.3)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Bot size={20} color={NEON_GREEN} />
+              </div>
+              <div style={{ position: 'absolute', bottom: -2, right: -2, width: 10, height: 10, background: NEON_GREEN, borderRadius: '50%', border: '2px solid #0a0a14', animation: 'pulseGlow 2s infinite' }} />
             </div>
             <div>
-              <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>GreenCode AI</div>
-              <div style={{ fontSize: '0.68rem', color: 'var(--green)' }}>Online — Context-aware</div>
+              <div style={{ fontWeight: 600, fontSize: '0.95rem', color: '#fff', letterSpacing: '0.3px' }}>GreenCode AI</div>
+              <div style={{ fontSize: '0.75rem', color: '#9ca3af', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                Context-Aware Assistant
+              </div>
             </div>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-            <X size={18} />
+          <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: '#9ca3af', width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff'; }} onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#9ca3af'; }}>
+            <X size={16} />
           </button>
         </div>
 
-        {/* Messages */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
+        {/* Messages Area */}
+        <div className="chat-scroll" style={{ flex: 1, overflowY: 'auto', padding: '1.5rem 1.25rem' }}>
           {messages.map((m, i) => <MessageBubble key={i} msg={m} />)}
           {loading && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--green)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Bot size={13} color="#000" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+              <div style={{ width: 28, height: 28, borderRadius: '8px', background: `linear-gradient(135deg, ${NEON_GREEN}, ${NEON_CYAN})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Bot size={16} color="#000" />
               </div>
-              <TypingDots />
+              <div style={{ background: 'rgba(0, 212, 255, 0.05)', border: '1px solid rgba(0, 212, 255, 0.2)', borderRadius: '4px 14px 14px 14px', padding: '0.5rem 1rem' }}>
+                <TypingDots />
+              </div>
             </div>
           )}
           <div ref={bottomRef} />
         </div>
 
-        {/* Quick replies */}
+        {/* Quick Replies (Horizontal Scroll) */}
         {messages.length <= 1 && (
-          <div style={{ padding: '0 1rem 0.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+          <div className="chat-scroll" style={{ padding: '0 1.25rem 1rem', display: 'flex', overflowX: 'auto', gap: '0.5rem', scrollbarWidth: 'none' }}>
             {QUICK.map(q => (
-              <button
-                key={q}
-                onClick={() => sendMessage(q)}
-                style={{ background: 'rgba(0,212,255,0.07)', border: '1px solid rgba(0,212,255,0.2)', borderRadius: 100, color: 'var(--cyan)', padding: '0.3rem 0.6rem', fontSize: '0.72rem', cursor: 'pointer', transition: 'all 0.2s' }}
-              >
+              <button key={q} className="quick-reply-btn" onClick={() => sendMessage(q)}>
                 {q}
               </button>
             ))}
           </div>
         )}
 
-        {/* Input */}
-        <div style={{ padding: '0.75rem 1rem', borderTop: '1px solid var(--glass-border)', display: 'flex', gap: '0.5rem' }}>
+        {/* Input Area */}
+        <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', gap: '0.75rem', background: 'rgba(0,0,0,0.2)', borderRadius: '0 0 20px 20px' }}>
           <input
-            className="neu-input"
-            style={{ flex: 1, fontSize: '0.85rem', padding: '0.6rem 0.875rem' }}
+            className="chat-input"
             placeholder="Ask about your code..."
             value={input}
             onChange={e => setInput(e.target.value)}
@@ -162,17 +250,19 @@ export default function ChatSidebar({ open, onClose, analysisContext }) {
             onClick={() => sendMessage()}
             disabled={!input.trim() || loading}
             style={{
-              width: 38, height: 38, borderRadius: '50%', border: 'none', flexShrink: 0,
-              background: input.trim() ? 'var(--cyan)' : 'rgba(255,255,255,0.06)',
-              color: input.trim() ? '#000' : 'var(--text-muted)',
-              cursor: input.trim() ? 'pointer' : 'default',
+              width: 44, height: 44, borderRadius: '12px', border: 'none', flexShrink: 0,
+              background: input.trim() ? `linear-gradient(135deg, ${NEON_GREEN}, ${NEON_CYAN})` : 'rgba(255,255,255,0.05)',
+              color: input.trim() ? '#000' : '#6b7280',
+              cursor: input.trim() ? 'pointer' : 'not-allowed',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transition: 'all 0.2s',
+              boxShadow: input.trim() ? '0 4px 15px rgba(0, 255, 204, 0.2)' : 'none'
             }}
           >
-            <Send size={16} />
+            <Send size={18} style={{ marginLeft: input.trim() ? '2px' : '0' }} />
           </button>
         </div>
+
       </div>
     </>
   );

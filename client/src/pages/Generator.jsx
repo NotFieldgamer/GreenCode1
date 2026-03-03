@@ -1,52 +1,242 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Copy, ExternalLink, Zap, Sparkles, Code2, Settings, AlertTriangle, ChevronDown, ChevronUp, Lightbulb } from 'lucide-react';
-import AppLayout from '../components/AppLayout';
+import { Copy, ExternalLink, Zap, Sparkles, Code2, Settings, AlertTriangle, ChevronDown, ChevronUp, Lightbulb, TerminalSquare } from 'lucide-react';
 import PremiumGate from '../components/PremiumGate';
 import { toast, ToastContainer } from '../components/Toast';
 import { useSubscription } from '../hooks/useSubscription';
 import api from '../utils/api';
 
-const QUICK_CHIPS = [
-  'Find duplicates in an array',
-  'Debounce user input',
-  'Binary search in sorted list',
-  'Memoize expensive function',
-  'Fetch with retry and backoff',
-  'Flatten nested array',
-  'Group array by property',
-  'LRU cache implementation',
-  'Deep clone an object',
-  'Rate limiter (token bucket)',
-];
+/* ================= THEME CONSTANTS ================= */
+const NEON_GREEN = '#00ffcc';
+const NEON_CYAN = '#00d4ff';
+const NEON_PURPLE = '#a78bfa';
 
 const LANGUAGES = ['javascript','typescript','python','java','go','rust','c++','php','ruby'];
 
+const QUICK_CHIPS = [
+  'Find duplicates in an array', 'Debounce user input', 'Binary search in sorted list',
+  'Memoize expensive function', 'Fetch with retry and backoff', 'Flatten nested array',
+  'Group array by property', 'LRU cache implementation', 'Deep clone an object', 'Rate limiter (token bucket)'
+];
+
 const COMPLEXITY_COLORS = {
-  'O(1)':        'var(--green)',
-  'O(log n)':    '#4ade80',
-  'O(n)':        'var(--cyan)',
-  'O(n log n)':  'var(--amber)',
-  'O(n\u00b2)':       'var(--red)',
+  'O(1)': NEON_GREEN,
+  'O(log n)': '#4ade80',
+  'O(n)': NEON_CYAN,
+  'O(n log n)': '#ffb84d',
+  'O(n²)': '#ef4444',
 };
+
+/* ================= INJECTED STYLES ================= */
+const generatorStyles = `
+  .glass-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 1.5rem;
+    backdrop-filter: blur(12px);
+    margin-bottom: 1.5rem;
+  }
+
+  .ai-textarea {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    color: #fff;
+    font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
+    resize: vertical;
+    min-height: 100px;
+    line-height: 1.6;
+    outline: none;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+  }
+
+  .ai-textarea:focus {
+    border-color: ${NEON_PURPLE};
+    background: rgba(0, 0, 0, 0.6);
+    box-shadow: 0 0 15px rgba(167, 139, 250, 0.15);
+  }
+
+  .quick-chip {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 100px;
+    color: #9ca3af;
+    font-size: 0.8rem;
+    padding: 0.4rem 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .quick-chip:hover {
+    background: rgba(167, 139, 250, 0.1);
+    border-color: ${NEON_PURPLE};
+    color: ${NEON_PURPLE};
+    transform: translateY(-1px);
+  }
+
+  .lang-select-ai {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 0.6rem 2rem 0.6rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 14px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .lang-select-ai:focus {
+    border-color: ${NEON_PURPLE};
+  }
+
+  .btn-generate {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, ${NEON_PURPLE}, #d8b4fe);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 0.6rem 1.5rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .btn-generate:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(167, 139, 250, 0.3);
+  }
+
+  .btn-generate:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: rgba(255,255,255,0.1);
+    color: #9ca3af;
+  }
+
+  .data-badge {
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-family: 'Fira Code', monospace;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+`;
+
+
+// Add this helper component to both Analyzer.jsx and Generator.jsx
+function CustomSelect({ value, onChange, options, themeColor = '#00d4ff' }) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const dropdownRef = React.useRef(null);
+
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={dropdownRef} style={{ position: 'relative', minWidth: '140px', userSelect: 'none' }}>
+      <style>{`
+        .custom-dropdown-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-dropdown-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-dropdown-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
+        .custom-dropdown-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+      `}</style>
+
+      <div
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          background: 'rgba(255, 255, 255, 0.05)',
+          border: `1px solid ${isOpen ? themeColor : 'rgba(255, 255, 255, 0.1)'}`,
+          color: '#fff',
+          padding: '0.6rem 1rem',
+          borderRadius: '8px',
+          fontSize: '0.85rem',
+          fontWeight: 600,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          transition: 'all 0.2s ease',
+          boxShadow: isOpen ? `0 0 15px ${themeColor}30` : 'none'
+        }}
+      >
+        {value.toUpperCase()}
+        <ChevronDown size={16} style={{ color: '#9ca3af', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+      </div>
+
+      {isOpen && (
+        <div className="custom-dropdown-scroll" style={{
+          position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '0.5rem',
+          background: 'rgba(15, 15, 25, 0.98)', border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '8px', backdropFilter: 'blur(16px)', zIndex: 100,
+          maxHeight: '220px', overflowY: 'auto', boxShadow: '0 10px 40px rgba(0,0,0,0.7)',
+          animation: 'fadeSlideUp 0.2s ease forwards'
+        }}>
+          {options.map(opt => (
+            <div
+              key={opt}
+              onClick={() => { onChange(opt); setIsOpen(false); }}
+              style={{
+                padding: '0.75rem 1rem', fontSize: '0.85rem',
+                color: value === opt ? themeColor : '#9ca3af',
+                background: value === opt ? `${themeColor}15` : 'transparent',
+                fontWeight: value === opt ? 700 : 500, cursor: 'pointer',
+                transition: 'background 0.2s, color 0.2s', textTransform: 'uppercase', letterSpacing: '0.5px'
+              }}
+              onMouseEnter={e => { if (value !== opt) { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#fff'; } }}
+              onMouseLeave={e => { if (value !== opt) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#9ca3af'; } }}
+            >
+              {opt}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function CodeBlock({ code, language, label, onCopy }) {
   return (
-    <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: 12, overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.6rem 1rem', borderBottom: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.03)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--green)', display: 'inline-block' }} />
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'capitalize' }}>{language}</span>
-          {label && <span className="badge badge-cyan" style={{ fontSize: '0.65rem' }}>{label}</span>}
+    <div style={{ background: 'rgba(0,0,0,0.5)', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <TerminalSquare size={14} color="#9ca3af" />
+          <span style={{ fontSize: '0.8rem', color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{language}</span>
+          {label && <span style={{ background: 'rgba(0, 212, 255, 0.1)', color: NEON_CYAN, border: `1px solid rgba(0, 212, 255, 0.2)`, padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600 }}>{label}</span>}
         </div>
         <button
           onClick={onCopy}
-          style={{ background: 'none', border: '1px solid var(--glass-border)', borderRadius: 6, color: 'var(--text-muted)', padding: '0.25rem 0.55rem', cursor: 'pointer', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem', transition: 'all 0.2s' }}
+          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: '#e5e7eb', padding: '0.3rem 0.6rem', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem', transition: 'all 0.2s' }}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
         >
-          <Copy size={12} /> Copy
+          <Copy size={14} /> Copy
         </button>
       </div>
-      <pre style={{ margin: 0, padding: '1rem', fontSize: '0.78rem', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', overflowX: 'auto', lineHeight: 1.75, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+      <pre style={{ margin: 0, padding: '1.25rem', fontSize: '0.9rem', fontFamily: "'Fira Code', monospace", color: '#e5e7eb', overflowX: 'auto', lineHeight: 1.6, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
         {code}
       </pre>
     </div>
@@ -54,12 +244,12 @@ function CodeBlock({ code, language, label, onCopy }) {
 }
 
 function GeneratorContent() {
-  const { credits, plan, refresh } = useSubscription();
+  const { credits, refresh } = useSubscription();
   const [description, setDescription] = useState('');
-  const [language, setLanguage]       = useState('javascript');
-  const [loading, setLoading]         = useState(false);
-  const [result, setResult]           = useState(null);
-  const [showAlts, setShowAlts]       = useState(false);
+  const [language, setLanguage] = useState('javascript');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [showAlts, setShowAlts] = useState(false);
 
   async function generate(desc = description) {
     if (!desc.trim()) { toast('Describe what you want to generate', 'info'); return; }
@@ -83,141 +273,119 @@ function GeneratorContent() {
   }
 
   return (
-    <div>
+    <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '1rem 0' }}>
+      <style>{generatorStyles}</style>
       <ToastContainer />
 
       {/* Header */}
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Sparkles size={20} color="#a78bfa" /> Green Code Generator
+      <div style={{ marginBottom: '2rem' }}>
+        <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '2rem', fontWeight: 700, margin: '0 0 0.5rem 0' }}>
+          <Sparkles size={28} color={NEON_PURPLE} style={{ filter: `drop-shadow(0 0 10px ${NEON_PURPLE}60)` }} /> AI Code Generator
         </h1>
-        <p className="page-desc">
-          Describe any function in plain English &rarr; get the most energy-efficient implementation.
-          {' '}
-          <span style={{ color: 'var(--amber)', fontWeight: 600 }}>
-            {credits} credit{credits !== 1 ? 's' : ''} remaining
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: '#9ca3af', fontSize: '1rem' }}>
+          <span>Describe any function in plain English to get the most energy-efficient implementation.</span>
+          <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#ffb84d', fontWeight: 600, background: 'rgba(255, 184, 77, 0.1)', padding: '0.2rem 0.6rem', borderRadius: '4px' }}>
+            <Zap size={14} /> {credits} credit{credits !== 1 ? 's' : ''} left
           </span>
-          {' \u00b7 '}
-          <Link to="/pricing" style={{ color: 'var(--cyan)', fontSize: '0.85rem' }}>Get more</Link>
-        </p>
+        </div>
       </div>
 
-      {/* Input area */}
-      <div className="card" style={{ marginBottom: '1.25rem' }}>
-        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
-          Describe what you need
+      {/* Input Area */}
+      <div className="glass-card">
+        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#9ca3af', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+          Describe your function
         </div>
+        
         <textarea
+          className="ai-textarea"
           value={description}
           onChange={e => setDescription(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) generate(); }}
-          placeholder="e.g. 'Find duplicates in an array efficiently' or 'Debounce a search input'"
-          style={{
-            width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--glass-border)',
-            borderRadius: 12, padding: '1rem', color: 'var(--text-primary)', fontSize: '0.95rem',
-            resize: 'vertical', minHeight: 80, lineHeight: 1.6, outline: 'none',
-            fontFamily: 'Inter, sans-serif', transition: 'border-color 0.2s',
-          }}
-          onFocus={e => { e.target.style.borderColor = 'var(--green)'; }}
-          onBlur={e => { e.target.style.borderColor = 'var(--glass-border)'; }}
+          placeholder="e.g. 'Write a function to find duplicates in an array efficiently'..."
         />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.875rem', flexWrap: 'wrap' }}>
-          <select
-            value={language}
-            onChange={e => setLanguage(e.target.value)}
-            className="lang-select"
-            style={{ padding: '0.5rem 0.875rem', fontSize: '0.875rem' }}
-          >
-            {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
-          </select>
-          <button
-            className="btn-primary"
-            onClick={() => generate()}
-            disabled={loading || !description.trim() || credits <= 0}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.65rem 1.5rem' }}
-          >
-            {loading ? (
-              <><span className="pulse-dot" style={{ background: '#000' }} /> Generating...</>
-            ) : (
-              <><Zap size={14} /> Generate (1 credit)</>
-            )}
-          </button>
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Ctrl+Enter</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            <CustomSelect 
+  value={language} 
+  options={LANGUAGES}
+  themeColor={NEON_CYAN}
+  onChange={(val) => {
+    setLanguage(val);
+    if (code) analyze(code, val);
+  }} 
+/>
+            <button className="btn-generate" onClick={() => generate()} disabled={loading || !description.trim() || credits <= 0}>
+              {loading ? (
+                <><Settings size={16} className="spin" /> Generating...</>
+              ) : (
+                <><Sparkles size={16} /> Generate (1 credit)</>
+              )}
+            </button>
+          </div>
+          <span style={{ fontSize: '0.8rem', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            <kbd style={{ background: 'rgba(255,255,255,0.1)', padding: '0.2rem 0.4rem', borderRadius: '4px', fontFamily: 'monospace' }}>Ctrl</kbd> + <kbd style={{ background: 'rgba(255,255,255,0.1)', padding: '0.2rem 0.4rem', borderRadius: '4px', fontFamily: 'monospace' }}>Enter</kbd> to run
+          </span>
         </div>
       </div>
 
-      {/* Quick chips */}
-      <div style={{ marginBottom: '1.75rem' }}>
-        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.6rem' }}>
-          Quick start examples
+      {/* Quick Chips */}
+      <div style={{ marginBottom: '2.5rem' }}>
+        <div style={{ fontSize: '0.8rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+          Quick Examples
         </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
           {QUICK_CHIPS.map(chip => (
-            <button
-              key={chip}
-              onClick={() => useChip(chip)}
-              disabled={loading}
-              style={{
-                background: 'rgba(255,255,255,0.04)', border: '1px solid var(--glass-border)',
-                borderRadius: 100, color: 'var(--text-secondary)', fontSize: '0.78rem',
-                padding: '0.3rem 0.75rem', cursor: 'pointer', transition: 'all 0.2s',
-              }}
-              onMouseEnter={e => { e.target.style.borderColor = 'var(--green)'; e.target.style.color = 'var(--green)'; }}
-              onMouseLeave={e => { e.target.style.borderColor = 'var(--glass-border)'; e.target.style.color = 'var(--text-secondary)'; }}
-            >
+            <button key={chip} className="quick-chip" onClick={() => useChip(chip)} disabled={loading}>
               {chip}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Loading skeleton */}
+      {/* Loading State */}
       {loading && (
-        <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
-          <div style={{ marginBottom: '0.75rem', display: 'flex', justifyContent: 'center' }}>
-            <Settings size={32} color="var(--cyan)" style={{ animation: 'spin 1.5s linear infinite' }} />
-          </div>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            Generating the most energy-efficient {language} implementation...
-          </div>
+        <div className="glass-card" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+          <Settings size={40} color={NEON_PURPLE} style={{ animation: 'spin 1.5s linear infinite', margin: '0 auto 1rem' }} />
+          <div style={{ color: '#fff', fontSize: '1.1rem', fontWeight: 500, marginBottom: '0.5rem' }}>Synthesizing Code...</div>
+          <div style={{ color: '#9ca3af', fontSize: '0.9rem' }}>Analyzing algorithmic complexity for the most energy-efficient {language} implementation.</div>
         </div>
       )}
 
-      {/* Result */}
+      {/* Result Area */}
       {result && !loading && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          {/* Meta row */}
-          <div className="card" style={{ padding: '1rem 1.25rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: 200 }}>
-                <div style={{ fontWeight: 600, marginBottom: '0.2rem' }}>{result.description}</div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{result.category}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', animation: 'fadeSlideUp 0.4s ease' }}>
+          
+          {/* Meta Header */}
+          <div className="glass-card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+            <div>
+              <div style={{ fontWeight: 600, color: '#fff', fontSize: '1.1rem', marginBottom: '0.2rem' }}>{result.description}</div>
+              <div style={{ fontSize: '0.85rem', color: '#9ca3af' }}>{result.category}</div>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <div className="data-badge" style={{ background: 'rgba(0, 255, 204, 0.1)', color: NEON_GREEN, border: `1px solid rgba(0, 255, 204, 0.3)` }}>
+                Score: {result.sustainabilityScore}/100
               </div>
-              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                <span className="badge" style={{ background: 'rgba(0,255,136,0.1)', color: 'var(--green)', border: '1px solid rgba(0,255,136,0.2)', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
-                  {result.sustainabilityScore}/100
-                </span>
-                <span className="badge" style={{ background: `${COMPLEXITY_COLORS[result.complexity]}15`, color: COMPLEXITY_COLORS[result.complexity] || 'var(--cyan)', border: `1px solid ${COMPLEXITY_COLORS[result.complexity] || 'var(--cyan)'}30`, fontFamily: 'var(--font-mono)' }}>
-                  {result.complexity}
-                </span>
-                <span className="badge badge-purple" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                  <Zap size={11} /> {result.energyScore} energy
-                </span>
-                {result.isTemplate && <span className="badge badge-cyan">Verified Pattern</span>}
+              <div className="data-badge" style={{ background: `${COMPLEXITY_COLORS[result.complexity] || NEON_CYAN}15`, color: COMPLEXITY_COLORS[result.complexity] || NEON_CYAN, border: `1px solid ${COMPLEXITY_COLORS[result.complexity] || NEON_CYAN}40` }}>
+                {result.complexity}
+              </div>
+              <div className="data-badge" style={{ background: 'rgba(167, 139, 250, 0.1)', color: NEON_PURPLE, border: `1px solid rgba(167, 139, 250, 0.3)` }}>
+                <Zap size={12} /> {result.energyScore} kWh
               </div>
             </div>
           </div>
 
           {/* Explanation */}
-          <div className="card" style={{ padding: '1rem 1.25rem', background: 'rgba(0,255,136,0.03)', border: '1px solid rgba(0,255,136,0.12)' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--green)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-              <Lightbulb size={13} /> Why this is optimal
+          <div style={{ background: 'rgba(0, 255, 204, 0.05)', borderLeft: `3px solid ${NEON_GREEN}`, padding: '1rem 1.25rem', borderRadius: '0 8px 8px 0' }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 700, color: NEON_GREEN, textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Lightbulb size={14} /> Why this approach is optimal
             </div>
-            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.75 }}>{result.explanation}</p>
+            <p style={{ fontSize: '0.95rem', color: '#d1d5db', margin: 0, lineHeight: 1.6 }}>{result.explanation}</p>
           </div>
 
-          {/* Generated code */}
+          {/* Code Output */}
           <CodeBlock
             code={result.code}
             language={result.language}
@@ -225,51 +393,47 @@ function GeneratorContent() {
             onCopy={() => { navigator.clipboard.writeText(result.code); toast('Code copied!', 'success'); }}
           />
 
-          {/* Actions */}
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <button
-              className="btn-primary"
-              onClick={() => { navigator.clipboard.writeText(result.code); toast('Code copied!', 'success'); }}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-            >
-              <Copy size={14} /> Copy Code
+          {/* Bottom Actions */}
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <button onClick={() => { navigator.clipboard.writeText(result.code); toast('Code copied!', 'success'); }} style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', borderRadius: '8px', padding: '0.75rem 1.5rem', fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s'
+            }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}>
+              <Copy size={16} /> Copy Full Snippet
             </button>
-            <button
-              className="btn-ghost"
-              onClick={() => {
-                const url = `/analyzer?code=${encodeURIComponent(result.code)}&lang=${result.language}`;
-                window.open(url, '_blank');
-              }}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-            >
-              <ExternalLink size={14} /> Open in Analyzer
+            <button onClick={() => window.open(`/analyzer?code=${encodeURIComponent(result.code)}&lang=${result.language}`, '_blank')} style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'transparent', color: NEON_CYAN, border: `1px solid ${NEON_CYAN}`, borderRadius: '8px', padding: '0.75rem 1.5rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s'
+            }} onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,212,255,0.1)'; }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
+              <ExternalLink size={16} /> Run in Analyzer
             </button>
           </div>
 
-          {/* Alternatives */}
+          {/* Alternatives Accordion */}
           {result.alternatives?.length > 0 && (
-            <div className="card">
-              <button
-                onClick={() => setShowAlts(s => !s)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', width: '100%', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 600, fontSize: '0.875rem' }}
+            <div className="glass-card" style={{ padding: 0, marginTop: '1rem' }}>
+              <div 
+                onClick={() => setShowAlts(!showAlts)}
+                style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', background: showAlts ? 'rgba(255,255,255,0.02)' : 'transparent' }}
               >
-                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <AlertTriangle size={14} color="var(--amber)" /> Alternative Approaches (less efficient)
-                </span>
-                <span>{showAlts ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</span>
-              </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ffb84d', fontWeight: 600, fontSize: '0.95rem' }}>
+                  <AlertTriangle size={16} /> Show Alternative Approaches <span style={{ color: '#6b7280', fontWeight: 400 }}>(Less Efficient)</span>
+                </div>
+                {showAlts ? <ChevronUp size={20} color="#9ca3af" /> : <ChevronDown size={20} color="#9ca3af" />}
+              </div>
+              
               {showAlts && (
-                <div style={{ marginTop: '0.875rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+                <div style={{ padding: '0 1.25rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.25rem' }}>
                   {result.alternatives.map((alt, i) => (
                     <div key={i}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>{alt.label}</span>
-                        <span className="badge badge-medium" style={{ fontSize: '0.65rem', fontFamily: 'var(--font-mono)' }}>{alt.complexity}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                        <span style={{ fontSize: '0.9rem', color: '#d1d5db', fontWeight: 500 }}>{alt.label}</span>
+                        <span className="data-badge" style={{ background: 'rgba(255,255,255,0.05)', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.1)', padding: '0.15rem 0.5rem' }}>
+                          {alt.complexity}
+                        </span>
                       </div>
                       <CodeBlock
                         code={alt.code}
                         language={result.language}
-                        onCopy={() => { navigator.clipboard.writeText(alt.code); toast('Copied (less efficient version)', 'info'); }}
+                        onCopy={() => { navigator.clipboard.writeText(alt.code); toast('Copied alternative version', 'info'); }}
                       />
                     </div>
                   ))}
@@ -280,15 +444,15 @@ function GeneratorContent() {
         </div>
       )}
 
-      {/* Empty state */}
+      {/* Empty State */}
       {!result && !loading && (
-        <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-            <Code2 size={40} color="var(--green)" style={{ opacity: 0.5 }} />
+        <div className="glass-card" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+          <div style={{ width: 64, height: 64, background: 'rgba(167, 139, 250, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', border: `1px solid rgba(167, 139, 250, 0.3)` }}>
+            <Code2 size={28} color={NEON_PURPLE} />
           </div>
-          <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Ready to generate green code</div>
-          <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-            Describe any function above, or click a quick start chip. Each generation costs 1 credit.
+          <div style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 600, marginBottom: '0.5rem' }}>Waiting for Prompt</div>
+          <div style={{ color: '#9ca3af', fontSize: '0.95rem', maxWidth: '400px', margin: '0 auto' }}>
+            Describe the function you need above, or click a quick start chip. Each generation costs 1 credit.
           </div>
         </div>
       )}
@@ -298,30 +462,28 @@ function GeneratorContent() {
 
 export default function Generator() {
   const { isPro, isEnterprise } = useSubscription();
-  console.log('SUB:', {isPro, isEnterprise});
-
 
   return (
     <>
       {isPro || isEnterprise ? (
         <GeneratorContent />
       ) : (
-        <div>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Sparkles size={20} color="#a78bfa" /> Green Code Generator
+        <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '1rem 0' }}>
+          <div style={{ marginBottom: '2rem' }}>
+            <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '2rem', fontWeight: 700, margin: '0 0 0.5rem 0' }}>
+              <Sparkles size={28} color={NEON_PURPLE} /> AI Code Generator
             </h1>
-            <p className="page-desc">Generate the most energy-efficient code for any function. Pro &amp; Enterprise feature.</p>
+            <p style={{ color: '#9ca3af', fontSize: '1rem', margin: 0 }}>Generate the most energy-efficient code for any function. Pro & Enterprise feature.</p>
           </div>
+          
           <PremiumGate feature="generator" requiredPlan="pro">
-            {/* Preview */}
-            <div className="card" style={{ opacity: 0.5, pointerEvents: 'none' }}>
-              <div style={{ marginBottom: '0.75rem', fontWeight: 600 }}>Describe what you need</div>
-              <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 12, border: '1px solid var(--glass-border)', padding: '1rem', color: 'var(--text-muted)', height: 80 }}>
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', padding: '1.5rem', opacity: 0.4, pointerEvents: 'none' }}>
+              <div style={{ marginBottom: '0.75rem', fontWeight: 600, color: '#fff' }}>Describe what you need</div>
+              <div style={{ background: 'rgba(0,0,0,0.5)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', padding: '1rem', color: '#6b7280', height: '80px' }}>
                 Find duplicates in an array...
               </div>
-              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
-                {QUICK_CHIPS.slice(0, 4).map(c => <span key={c} className="badge badge-cyan">{c}</span>)}
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                {QUICK_CHIPS.slice(0, 4).map(c => <span key={c} style={{ background: 'rgba(0,212,255,0.1)', border: `1px solid rgba(0,212,255,0.2)`, color: NEON_CYAN, borderRadius: '100px', padding: '0.3rem 0.8rem', fontSize: '0.75rem' }}>{c}</span>)}
               </div>
             </div>
           </PremiumGate>

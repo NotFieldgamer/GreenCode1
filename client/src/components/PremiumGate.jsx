@@ -1,10 +1,38 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { MdLock } from 'react-icons/md';
+import { Lock, Sparkles } from 'lucide-react';
 import { useSubscription } from '../hooks/useSubscription';
+
+/* ================= THEME CONSTANTS ================= */
+const NEON_CYAN = '#00d4ff';
+const NEON_PURPLE = '#a78bfa';
 
 const PLAN_LABELS = { pro: 'Pro', enterprise: 'Enterprise' };
 const PLAN_PRICES = { pro: '$9.99/mo', enterprise: '$29.99/mo' };
+
+/* ================= INJECTED STYLES ================= */
+const gateStyles = `
+  .premium-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, ${NEON_PURPLE}, #d8b4fe);
+    border: none;
+    border-radius: 12px;
+    color: #000;
+    padding: 0.75rem 1.75rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-decoration: none;
+    box-shadow: 0 4px 20px rgba(167, 139, 250, 0.4);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .premium-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(167, 139, 250, 0.6);
+  }
+`;
 
 export default function PremiumGate({ feature = 'pro', requiredPlan = 'pro', children }) {
   const { isPro, isEnterprise, plan } = useSubscription();
@@ -17,57 +45,61 @@ export default function PremiumGate({ feature = 'pro', requiredPlan = 'pro', chi
 
   if (hasAccess) return children;
 
+  const themeColor = requiredPlan === 'enterprise' ? NEON_PURPLE : NEON_CYAN;
+
   return (
     <div style={{
       position: 'relative',
-      borderRadius: 18,
+      borderRadius: '20px',
       overflow: 'hidden',
-      border: '1px solid rgba(168,85,247,0.25)',
+      border: `1px solid ${themeColor}40`,
+      background: 'rgba(255, 255, 255, 0.02)',
     }}>
-      {/* Blurred preview */}
-      <div style={{ filter: 'blur(3px)', pointerEvents: 'none', userSelect: 'none', opacity: 0.4 }}>
+      <style>{gateStyles}</style>
+
+      {/* Blurred Preview */}
+      <div style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none', opacity: 0.3, transition: 'all 0.3s' }}>
         {children}
       </div>
 
-      {/* Lock overlay */}
+      {/* Glassmorphic Overlay */}
       <div style={{
         position: 'absolute', inset: 0,
-        background: 'rgba(8,8,25,0.7)',
-        backdropFilter: 'blur(6px)',
+        background: 'rgba(10, 10, 20, 0.6)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        gap: '0.75rem', textAlign: 'center', padding: '2rem',
+        gap: '1rem', textAlign: 'center', padding: '2rem',
       }}>
+        
+        {/* Glowing Lock Icon */}
         <div style={{
-          width: 52, height: 52, borderRadius: '50%',
-          background: 'linear-gradient(135deg, #7c3aed, #a78bfa)',
+          width: 64, height: 64, borderRadius: '50%',
+          background: `linear-gradient(135deg, ${themeColor}, #d8b4fe)`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '1.4rem', boxShadow: '0 0 30px rgba(124,58,237,0.4)',
+          boxShadow: `0 0 30px ${themeColor}60`,
+          marginBottom: '0.5rem'
         }}>
-          <MdLock style={{ color: '#fff' }} />
+          <Lock size={28} color="#000" />
         </div>
-        <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-primary)' }}>
-          {PLAN_LABELS[requiredPlan] || 'Pro'} Feature
+        
+        <div>
+          <div style={{ fontWeight: 800, fontSize: '1.25rem', color: '#fff', letterSpacing: '0.5px', marginBottom: '0.4rem' }}>
+            {PLAN_LABELS[requiredPlan] || 'Pro'} Feature
+          </div>
+          <div style={{ fontSize: '0.95rem', color: '#9ca3af', maxWidth: '300px', lineHeight: 1.6, margin: '0 auto' }}>
+            Unlock this capability and more with the {PLAN_LABELS[requiredPlan]} plan
+            ({PLAN_PRICES[requiredPlan]}).
+          </div>
         </div>
-        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', maxWidth: 240, lineHeight: 1.7 }}>
-          This feature is available on the {PLAN_LABELS[requiredPlan]} plan
-          ({PLAN_PRICES[requiredPlan]}).
-        </div>
-        <Link
-          to="/pricing"
-          style={{
-            background: 'linear-gradient(135deg, #7c3aed, #a78bfa)',
-            border: 'none', borderRadius: 12, color: '#fff',
-            padding: '0.6rem 1.5rem', fontWeight: 700, fontSize: '0.9rem',
-            textDecoration: 'none',
-            boxShadow: '0 4px 20px rgba(124,58,237,0.4)',
-            transition: 'all 0.2s',
-          }}
-        >
-          🚀 Upgrade Now
+
+        <Link to="/pricing" className="premium-btn">
+          <Sparkles size={18} /> Upgrade Now
         </Link>
-        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-          Current plan: <strong style={{ color: 'var(--cyan)' }}>{plan?.toUpperCase() || 'FREE'}</strong>
+
+        <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '0.5rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          Current plan: <strong style={{ color: '#fff', background: 'rgba(255,255,255,0.1)', padding: '0.2rem 0.5rem', borderRadius: '4px', marginLeft: '4px' }}>{plan?.toUpperCase() || 'FREE'}</strong>
         </div>
       </div>
     </div>
