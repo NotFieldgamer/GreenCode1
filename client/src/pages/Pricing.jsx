@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Check, X, TrendingUp, Zap, Users, Code2, MessageSquare, BarChart3, ChevronDown, ChevronUp, Shield, Cpu, FileText } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
-import api from '../utils/api';
 import AppLayout from '../components/AppLayout';
 
 /* ================= THEME CONSTANTS ================= */
@@ -138,22 +137,19 @@ function CellValue({ val, color }) {
 
 export default function Pricing() {
   const { isAuthenticated } = useAuth();
-  const { plan: currentPlan, refresh } = useSubscription();
+  const { plan: currentPlan } = useSubscription(); 
   const navigate = useNavigate();
-  const [upgrading, setUpgrading] = useState(null);
   const [faqOpen, setFaqOpen] = useState(null);
   
-  async function handleUpgrade(planKey) {
-    if (!isAuthenticated) { navigate('/register'); return; }
-    if (planKey === 'free') return;
-    setUpgrading(planKey);
-    try {
-      await api.post('/user/upgrade', { plan: planKey });
-      await refresh();
-      navigate('/dashboard');
-    } catch (e) {
-      console.error(e);
-    } finally { setUpgrading(null); }
+  function handleUpgrade(planKey) {
+    if (!isAuthenticated) { 
+      navigate('/register'); 
+      return; 
+    }
+    if (planKey === 'free') return; // Free is default, no checkout needed
+    
+    // Redirect to the new Demo Checkout page instead of direct API call
+    navigate(`/checkout/${planKey}`);
   }
   
   return (
@@ -255,7 +251,7 @@ export default function Pricing() {
 
                 <button
                   onClick={() => handleUpgrade(plan.key)}
-                  disabled={isCurrent || plan.key === 'free' || upgrading === plan.key}
+                  disabled={isCurrent || plan.key === 'free'}
                   style={{
                     width: '100%', padding: '1rem', borderRadius: '12px', border: 'none',
                     background: isCurrent ? 'rgba(255,255,255,0.1)' : plan.key === 'enterprise' ? NEON_PURPLE : plan.key === 'pro' ? NEON_CYAN : 'rgba(255,255,255,0.05)',
@@ -265,7 +261,7 @@ export default function Pricing() {
                     boxShadow: !isCurrent && plan.key !== 'free' ? `0 4px 15px ${plan.accent}40` : 'none'
                   }}
                 >
-                  {isCurrent ? 'Current Plan' : upgrading === plan.key ? 'Processing...' : plan.key === 'free' ? 'Get Started Free' : `Upgrade to ${plan.name}`}
+                  {isCurrent ? 'Current Plan' : plan.key === 'free' ? 'Default Plan' : `Upgrade to ${plan.name}`}
                 </button>
               </div>
             );

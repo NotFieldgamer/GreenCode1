@@ -1,14 +1,19 @@
 require('dotenv').config();   // load .env before any other require
 const express = require('express');
 const cors    = require('cors');
+const mongoose = require('mongoose');
 
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('✅ Connected to MongoDB'))
+  .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
 const authRoutes        = require('./routes/auth');
 const analyzeRoutes     = require('./routes/analyze');
 const userRoutes        = require('./routes/user');
 const adminRoutes       = require('./routes/admin');
 const leaderboardRoutes = require('./routes/leaderboard');
-const { router: achievementRoutes, checkAchievements } = require('./routes/achievements');
+const {checkAchievements } = require('./routes/achievements');
+const achievementRoutes = require('./routes/achievements')
 const chatRoutes        = require('./routes/chat');
 const generatorRoutes   = require('./routes/generator');
 

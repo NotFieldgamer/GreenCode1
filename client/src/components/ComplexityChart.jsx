@@ -11,6 +11,7 @@ const NEON_CYAN = '#00d4ff';
 const NEON_PURPLE = '#a78bfa';
 const NEON_AMBER = '#ffb84d';
 const NEON_RED = '#ef4444';
+const GOLD = '#ffb84d';
 
 const CURVES = [
   { key: 'O(1)',       color: NEON_GREEN,  label: 'O(1) — Constant'     },

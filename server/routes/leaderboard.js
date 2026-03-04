@@ -1,40 +1,44 @@
 const router = require('express').Router();
-const { users, analyses, getUserPublic } = require('../data/db');
+const User = require('../models/User');
+const Analysis = require('../models/Analysis');
 
-// GET /api/leaderboard  (public — no auth required)
-router.get('/', (req, res) => {
-  // Build per-user stats
-  const rankedUsers = users
-    .filter(u => u.role !== 'admin')
-    .map(u => {
-      const userAnalyses = analyses.filter(a => a.userId === u.id);
-      const avgScore = userAnalyses.length
-        ? Math.round(userAnalyses.reduce((s, a) => s + a.sustainabilityScore, 0) / userAnalyses.length)
-        : 0;
-      const totalCO2Saved = parseFloat(
-        userAnalyses.reduce((s, a) => s + (a.co2Grams || 0) * 0.4, 0).toFixed(3)
-      );
-      const bestScore = userAnalyses.length
-        ? Math.max(...userAnalyses.map(a => a.sustainabilityScore))
-        : 0;
-      return {
-        id:            u.id,
-        name:          u.name,
-        avatar:        u.avatar,
-        totalAnalyses: u.totalAnalyses || userAnalyses.length,
+router.get('/', async (req, res) => {
+  try {
+    // Get all active users
+    const users = await User.find({ active: true });
+    const leaderboard = [];
+
+    for (const u of users) {
+      // Find all analyses for this user
+      const userAnalyses = await Analysis.find({ userId: u._id });
+      
+      if (userAnalyses.length === 0) continue; // Skip users who haven't analyzed anything
+
+      const avgScore = Math.round(userAnalyses.reduce((sum, a) => sum + a.sustainabilityScore, 0) / userAnalyses.length);
+      const totalCO2Saved = Math.round(u.totalCO2Offset || 0);
+
+      leaderboard.push({
+        id: u._id,
+        name: u.name,
+        avatar: u.name.charAt(0).toUpperCase(),
         avgScore,
-        bestScore,
+        totalAnalyses: userAnalyses.length,
         totalCO2Saved,
-        achievements:  u.achievements || [],
-        joinedAt:      u.createdAt,
-      };
-    })
-    .sort((a, b) => b.avgScore - a.avgScore || b.totalAnalyses - a.totalAnalyses);
+        achievements: userAnalyses.length > 5 ? ['active_user'] : [] // Mocked badge
+      });
+    }
 
-  // Assign ranks
-  rankedUsers.forEach((u, i) => { u.rank = i + 1; });
+    // Sort by Highest Score, then by most analyses
+    leaderboard.sort((a, b) => b.avgScore - a.avgScore || b.totalAnalyses - a.totalAnalyses);
+    
+    // Assign Ranks (1, 2, 3...)
+    leaderboard.forEach((u, i) => u.rank = i + 1);
 
-  res.json(rankedUsers);
+    res.json(leaderboard);
+  } catch (err) {
+    console.error('Leaderboard Error:', err);
+    res.status(500).json({ error: 'Failed to fetch leaderboard' });
+  }
 });
 
 module.exports = router;

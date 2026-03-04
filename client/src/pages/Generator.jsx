@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Copy, ExternalLink, Zap, Sparkles, Code2, Settings, AlertTriangle, ChevronDown, ChevronUp, Lightbulb, TerminalSquare } from 'lucide-react';
-import PremiumGate from '../components/PremiumGate';
+import { Copy, ExternalLink, Zap, Sparkles, Code2, Settings, AlertTriangle, ChevronDown, ChevronUp, Lightbulb, TerminalSquare, Lock } from 'lucide-react';
 import { toast, ToastContainer } from '../components/Toast';
 import { useSubscription } from '../hooks/useSubscription';
 import api from '../utils/api';
@@ -79,27 +78,6 @@ const generatorStyles = `
     transform: translateY(-1px);
   }
 
-  .lang-select-ai {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #fff;
-    padding: 0.6rem 2rem 0.6rem 1rem;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    outline: none;
-    appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 0.75rem center;
-    background-size: 14px;
-    cursor: pointer;
-    transition: border-color 0.2s;
-  }
-
-  .lang-select-ai:focus {
-    border-color: ${NEON_PURPLE};
-  }
-
   .btn-generate {
     display: flex;
     align-items: center;
@@ -139,13 +117,10 @@ const generatorStyles = `
   }
 `;
 
-
-// Add this helper component to both Analyzer.jsx and Generator.jsx
 function CustomSelect({ value, onChange, options, themeColor = '#00d4ff' }) {
   const [isOpen, setIsOpen] = React.useState(false);
   const dropdownRef = React.useRef(null);
 
-  // Close dropdown when clicking outside
   React.useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -308,14 +283,11 @@ function GeneratorContent() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
             <CustomSelect 
-  value={language} 
-  options={LANGUAGES}
-  themeColor={NEON_CYAN}
-  onChange={(val) => {
-    setLanguage(val);
-    if (code) analyze(code, val);
-  }} 
-/>
+              value={language} 
+              options={LANGUAGES}
+              themeColor={NEON_CYAN}
+              onChange={(val) => setLanguage(val)} 
+            />
             <button className="btn-generate" onClick={() => generate()} disabled={loading || !description.trim() || credits <= 0}>
               {loading ? (
                 <><Settings size={16} className="spin" /> Generating...</>
@@ -461,34 +433,39 @@ function GeneratorContent() {
 }
 
 export default function Generator() {
-  const { isPro, isEnterprise } = useSubscription();
+  const { plan, loading, isPro, isEnterprise } = useSubscription();
 
-  return (
-    <>
-      {isPro || isEnterprise ? (
-        <GeneratorContent />
-      ) : (
-        <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '1rem 0' }}>
-          <div style={{ marginBottom: '2rem' }}>
-            <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '2rem', fontWeight: 700, margin: '0 0 0.5rem 0' }}>
-              <Sparkles size={28} color={NEON_PURPLE} /> AI Code Generator
-            </h1>
-            <p style={{ color: '#9ca3af', fontSize: '1rem', margin: 0 }}>Generate the most energy-efficient code for any function. Pro & Enterprise feature.</p>
+  // Prevent flash of locked screen before subscription data loads
+  if (loading) return null; 
+
+  // Direct lock screen for free users instead of relying on the old PremiumGate wrapper
+  if (plan === 'free') {
+    return (
+      <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '1rem 0' }}>
+        <div style={{ 
+          maxWidth: '600px', margin: '4rem auto', textAlign: 'center', 
+          background: 'rgba(255,255,255,0.02)', padding: '3rem', borderRadius: '16px', 
+          border: '1px solid rgba(255,255,255,0.08)' 
+        }}>
+          <div style={{ background: 'rgba(0, 212, 255, 0.1)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+            <Lock size={32} color={NEON_CYAN} />
           </div>
-          
-          <PremiumGate feature="generator" requiredPlan="pro">
-            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', padding: '1.5rem', opacity: 0.4, pointerEvents: 'none' }}>
-              <div style={{ marginBottom: '0.75rem', fontWeight: 600, color: '#fff' }}>Describe what you need</div>
-              <div style={{ background: 'rgba(0,0,0,0.5)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', padding: '1rem', color: '#6b7280', height: '80px' }}>
-                Find duplicates in an array...
-              </div>
-              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-                {QUICK_CHIPS.slice(0, 4).map(c => <span key={c} style={{ background: 'rgba(0,212,255,0.1)', border: `1px solid rgba(0,212,255,0.2)`, color: NEON_CYAN, borderRadius: '100px', padding: '0.3rem 0.8rem', fontSize: '0.75rem' }}>{c}</span>)}
-              </div>
-            </div>
-          </PremiumGate>
+          <h2 style={{ color: '#fff', marginBottom: '1rem', fontSize: '1.8rem' }}>Premium Feature Locked</h2>
+          <p style={{ color: '#9ca3af', lineHeight: 1.6, marginBottom: '2rem' }}>
+            The AI Code Generator requires access to the Google Gemini models. Upgrade to the Pro or Enterprise plan to unlock high-fidelity, sustainable code generation.
+          </p>
+          <Link to="/pricing" style={{
+            display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+            background: `linear-gradient(135deg, ${NEON_GREEN}, ${NEON_CYAN})`, color: '#000',
+            padding: '0.8rem 2rem', borderRadius: '8px', fontWeight: 600, textDecoration: 'none'
+          }}>
+            <Sparkles size={18} /> View Upgrade Plans
+          </Link>
         </div>
-      )}
-    </>
-  );
+      </div>
+    );
+  }
+
+  // Normal UI for Pro/Enterprise users
+  return <GeneratorContent />;
 }

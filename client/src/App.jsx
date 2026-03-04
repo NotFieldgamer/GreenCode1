@@ -17,6 +17,7 @@ import Generator from './pages/Generator';
 import Leaderboard from './pages/Leaderboard';
 import Profile from './pages/Profile';
 import Admin from './pages/Admin';
+import Checkout from './pages/Checkout'
 
 
 export default function App() {
@@ -39,6 +40,7 @@ export default function App() {
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/checkout/:plan" element={<Checkout />} />
 
         </Route>
       </Route>

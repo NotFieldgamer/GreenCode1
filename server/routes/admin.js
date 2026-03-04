@@ -1,127 +1,152 @@
 const router = require('express').Router();
 const { verifyToken, requireAdmin } = require('../middleware/auth');
-const { users, analyses, detections, generatorLogs, PLANS, CURRENCY_RATES, setPlan, grantCredits } = require('../data/db');
+const User = require('../models/User');
+const Analysis = require('../models/Analysis');
+const { PLANS } = require('../data/db');
 
-// ── Platform stats (Overview tab) ─────────────────────────────────────────────
-router.get('/stats', verifyToken, requireAdmin, (req, res) => {
-  const totalEnergy = analyses.reduce((s, a) => s + (a.energyScore || 0), 0);
-  const totalCO2    = analyses.reduce((s, a) => s + (a.co2Grams  || 0), 0).toFixed(3);
-  const avgScore    = analyses.length
-    ? Math.round(analyses.reduce((s, a) => s + (a.sustainabilityScore || 0), 0) / analyses.length)
-    : 0;
+// 1. GET /api/admin/stats
+router.get('/stats', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    const totalAnalyses = await Analysis.countDocuments();
+    const analyses = await Analysis.find();
+    
+    let totalEnergy = 0, totalCO2 = 0, scoreSum = 0;
+    const detMap = {};
 
-  // Simulated 7-day time series
-  const timeSeries = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(); d.setDate(d.getDate() - (6 - i));
-    const label = d.toLocaleDateString('en', { weekday: 'short' });
-    const dayAnalyses = analyses.filter(a => {
-      const ad = new Date(a.timestamp); return ad.toDateString() === d.toDateString();
-    }).length;
-    return { name: label, analyses: dayAnalyses || Math.floor(Math.random() * 4) };
-  });
+    analyses.forEach(a => {
+      totalEnergy += (a.energyScore || 0);
+      totalCO2 += (a.co2Grams || 0);
+      scoreSum += (a.sustainabilityScore || 0);
+      if (a.detections) {
+        a.detections.forEach(d => { detMap[d] = (detMap[d] || 0) + 1; });
+      }
+    });
 
-  // Detection breakdown
-  const detMap = {};
-  analyses.forEach(a => (a.detections || []).forEach(d => { detMap[d] = (detMap[d] || 0) + 1; }));
-  const detectionBreakdown = Object.entries(detMap).map(([name, value]) => ({ name: name.replace(/_/g,' '), value }));
+    const avgScore = analyses.length > 0 ? Math.round(scoreSum / analyses.length) : 0;
+    const detectionBreakdown = Object.entries(detMap).map(([name, value]) => ({ name: name.replace(/_/g, ' '), value }));
 
-  // Energy per user
-  const energyPerUser = users.filter(u => u.role !== 'admin').map(u => ({
-    name: u.name.split(' ')[0],
-    energy: analyses.filter(a => a.userId === u.id).reduce((s, a) => s + (a.energyScore || 0), 0),
-  }));
+    // Mock time series for chart
+    const timeSeries = [];
+    for(let i=6; i>=0; i--) {
+        const d = new Date(); d.setDate(d.getDate() - i);
+        const dayAnalyses = analyses.filter(a => new Date(a.createdAt).toDateString() === d.toDateString());
+        timeSeries.push({ name: d.toLocaleDateString('en', {weekday: 'short'}), analyses: dayAnalyses.length });
+    }
 
-  // Plan distribution
-  const planDist = { free: 0, pro: 0, enterprise: 0 };
-  users.filter(u => u.role !== 'admin').forEach(u => { planDist[u.plan] = (planDist[u.plan] || 0) + 1; });
-
-  // Simulated revenue
-  const monthlyRevenue = users.reduce((s, u) => s + (PLANS[u.plan]?.price || 0), 0).toFixed(2);
-  const totalGenerations = generatorLogs.length;
-
-  res.json({
-    totalUsers: users.filter(u => u.role !== 'admin').length,
-    totalAnalyses: analyses.length,
-    totalEnergy, totalCO2, avgScore,
-    timeSeries, detectionBreakdown, energyPerUser,
-    planDist, monthlyRevenue, totalGenerations,
-  });
+    res.json({
+      totalUsers, totalAnalyses, 
+      totalEnergy: Math.round(totalEnergy), 
+      totalCO2: Math.round(totalCO2), 
+      avgScore, detectionBreakdown, timeSeries,
+      energyPerUser: [], // Simplify for now
+      totalGenerations: 0 
+    });
+  } catch (err) { res.status(500).json({ error: 'Stats error' }); }
 });
 
-// ── All users ─────────────────────────────────────────────────────────────────
-router.get('/users', verifyToken, requireAdmin, (req, res) => {
-  const result = users.map(u => ({
-    id: u.id, name: u.name, email: u.email, role: u.role, avatar: u.avatar,
-    active: u.active, totalAnalyses: u.totalAnalyses,
-    plan: u.plan, planName: PLANS[u.plan]?.name || 'Free',
-    credits: u.credits, createdAt: u.createdAt,
-  }));
-  res.json(result);
+// 2. GET /api/admin/users
+router.get('/users', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const allUsers = await User.find().select('-password');
+    const formatted = await Promise.all(allUsers.map(async u => {
+      const count = await Analysis.countDocuments({ userId: u._id });
+      return { id: u._id, name: u.name, email: u.email, role: u.role, plan: u.plan, active: u.active, totalAnalyses: count };
+    }));
+    res.json(formatted);
+  } catch (err) { res.status(500).json({ error: 'Users error' }); }
 });
 
-// ── Toggle user active status ──────────────────────────────────────────────
-router.put('/users/:id/toggle', verifyToken, requireAdmin, (req, res) => {
-  const user = users.find(u => u.id === req.params.id);
-  if (!user) return res.status(404).json({ error: 'User not found' });
-  user.active = !user.active;
-  res.json({ active: user.active });
+// 3. GET /api/admin/detections (Fixes "detections is not defined")
+router.get('/detections', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const analyses = await Analysis.find({ detections: { $exists: true, $not: {$size: 0} } }).sort({ createdAt: -1 }).populate('userId', 'name');
+    
+    const formattedDetections = analyses.flatMap(a => {
+        return a.detections.map((d, index) => ({
+            id: `${a._id}-${index}`,
+            userName: a.userId ? a.userId.name : 'Unknown User',
+            type: d,
+            severity: a.sustainabilityScore < 50 ? 'high' : 'medium',
+            timestamp: a.createdAt
+        }));
+    });
+    res.json(formattedDetections);
+  } catch (err) { res.status(500).json({ error: 'Detections error' }); }
 });
 
-// ── Delete user ───────────────────────────────────────────────────────────────
-router.delete('/users/:id', verifyToken, requireAdmin, (req, res) => {
-  const idx = users.findIndex(u => u.id === req.params.id);
-  if (idx === -1) return res.status(404).json({ error: 'User not found' });
-  users.splice(idx, 1);
-  res.json({ success: true });
+// 4. GET /api/admin/subscriptions (Fixes "users is not defined")
+router.get('/subscriptions', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const allUsers = await User.find().select('-password');
+    let monthlyRevenue = 0;
+    
+    const subs = allUsers.map(u => {
+      if (u.plan === 'pro') monthlyRevenue += PLANS.pro.price;
+      if (u.plan === 'enterprise') monthlyRevenue += PLANS.enterprise.price;
+      return {
+        id: u._id, name: u.name, email: u.email, plan: u.plan, 
+        planName: PLANS[u.plan]?.name || 'Free', 
+        credits: u.credits || 0, creditsResetAt: u.creditsResetAt
+      };
+    });
+
+    res.json({ subscriptions: subs, monthlyRevenue: monthlyRevenue.toFixed(2), PLANS });
+  } catch (err) { res.status(500).json({ error: 'Subscriptions error' }); }
 });
 
-// ── Set user plan (Subscriptions tab) ────────────────────────────────────────
-router.put('/users/:id/plan', verifyToken, requireAdmin, (req, res) => {
-  const { plan } = req.body;
-  if (!PLANS[plan]) return res.status(400).json({ error: 'Invalid plan' });
-  const ok = setPlan(req.params.id, plan);
-  if (!ok) return res.status(404).json({ error: 'User not found' });
-  res.json({ plan, planName: PLANS[plan].name, credits: PLANS[plan].generatorCredits });
+// 5. PUT /api/admin/users/:id/plan (Update Plan)
+router.put('/users/:id/plan', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const { plan } = req.body;
+    if (!['free', 'pro', 'enterprise'].includes(plan)) return res.status(400).json({ error: 'Invalid plan' });
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    user.plan = plan;
+    if (plan === 'free') {
+      user.credits = 0; user.creditsResetAt = null;
+    } else {
+      user.credits = PLANS[plan].generatorCredits; 
+      user.creditsResetAt = new Date(Date.now() + 30 * 86400000);
+    }
+    await user.save();
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: 'Plan update error' }); }
 });
 
-// ── Grant credits ─────────────────────────────────────────────────────────────
-router.put('/users/:id/credits', verifyToken, requireAdmin, (req, res) => {
-  const amount = parseInt(req.body.amount);
-  if (!amount || amount <= 0) return res.status(400).json({ error: 'Amount must be positive' });
-  const ok = grantCredits(req.params.id, amount);
-  if (!ok) return res.status(404).json({ error: 'User not found' });
-  const user = users.find(u => u.id === req.params.id);
-  res.json({ credits: user.credits });
+// 6. PUT /api/admin/users/:id/credits (Grant Credits)
+router.put('/users/:id/credits', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const { amount } = req.body;
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    user.credits = (user.credits || 0) + Number(amount);
+    await user.save();
+    res.json({ credits: user.credits });
+  } catch (err) { res.status(500).json({ error: 'Credit update error' }); }
 });
 
-// ── Detection logs ─────────────────────────────────────────────────────────────
-router.get('/detections', verifyToken, requireAdmin, (req, res) => {
-  const enriched = detections.map(d => {
-    const user = users.find(u => u.id === d.userId);
-    return { ...d, userName: user?.name || 'Unknown' };
-  });
-  res.json(enriched.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)));
+// 7. PUT /api/admin/users/:id/toggle (Suspend/Activate)
+router.put('/users/:id/toggle', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    user.active = !user.active;
+    await user.save();
+    res.json({ active: user.active });
+  } catch (err) { res.status(500).json({ error: 'Toggle error' }); }
 });
 
-// ── Generator logs ─────────────────────────────────────────────────────────────
-router.get('/generator-logs', verifyToken, requireAdmin, (req, res) => {
-  const enriched = generatorLogs.map(g => {
-    const user = users.find(u => u.id === g.userId);
-    return { ...g, userName: user?.name || 'Unknown' };
-  });
-  res.json(enriched.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)));
-});
-
-// ── Subscription summary ───────────────────────────────────────────────────────
-router.get('/subscriptions', verifyToken, requireAdmin, (req, res) => {
-  const subs = users.filter(u => u.role !== 'admin').map(u => ({
-    id: u.id, name: u.name, email: u.email, avatar: u.avatar,
-    plan: u.plan, planName: PLANS[u.plan]?.name || 'Free',
-    credits: u.credits, creditsResetAt: u.creditsResetAt,
-    totalAnalyses: u.totalAnalyses, active: u.active,
-  }));
-  const revenue = subs.reduce((s, u) => s + (PLANS[u.plan]?.price || 0), 0);
-  res.json({ subscriptions: subs, monthlyRevenue: revenue.toFixed(2), PLANS, CURRENCY_RATES });
+// 8. DELETE /api/admin/users/:id (Delete User)
+router.delete('/users/:id', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.params.id);
+    await Analysis.deleteMany({ userId: req.params.id }); // Clean up their analyses
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: 'Delete error' }); }
 });
 
 module.exports = router;

@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Send, Bot, Sparkles } from 'lucide-react';
+import { X, Send, Bot, Sparkles, Lock } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useSubscription } from '../hooks/useSubscription';
 import api from '../utils/api';
 
 /* ================= THEME CONSTANTS ================= */
@@ -137,6 +139,7 @@ function MessageBubble({ msg }) {
 const QUICK = ['Why is my score low?', 'How do I fix nested loops?', 'What does O(n²) mean?', 'Estimate CO₂ savings'];
 
 export default function ChatSidebar({ open, onClose, analysisContext }) {
+  const { plan, loading: planLoading } = useSubscription();
   const [messages, setMessages] = useState([
     { role: 'ai', text: 'Hi! I am the GreenCode AI. Ask me anything about your code\'s energy efficiency, complexity, or sustainability impact!', suggestions: [] },
   ]);
@@ -210,59 +213,78 @@ export default function ChatSidebar({ open, onClose, analysisContext }) {
           </button>
         </div>
 
-        {/* Messages Area */}
-        <div className="chat-scroll" style={{ flex: 1, overflowY: 'auto', padding: '1.5rem 1.25rem' }}>
-          {messages.map((m, i) => <MessageBubble key={i} msg={m} />)}
-          {loading && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-              <div style={{ width: 28, height: 28, borderRadius: '8px', background: `linear-gradient(135deg, ${NEON_GREEN}, ${NEON_CYAN})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Bot size={16} color="#000" />
-              </div>
-              <div style={{ background: 'rgba(0, 212, 255, 0.05)', border: '1px solid rgba(0, 212, 255, 0.2)', borderRadius: '4px 14px 14px 14px', padding: '0.5rem 1rem' }}>
-                <TypingDots />
-              </div>
+        {!planLoading && plan === 'free' ? (
+          /* Lock Screen for Free Users */
+          <div style={{ padding: '2rem 1.5rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+            <div style={{ background: 'rgba(0, 212, 255, 0.1)', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+              <Lock size={28} color={NEON_CYAN} />
             </div>
-          )}
-          <div ref={bottomRef} />
-        </div>
-
-        {/* Quick Replies (Horizontal Scroll) */}
-        {messages.length <= 1 && (
-          <div className="chat-scroll" style={{ padding: '0 1.25rem 1rem', display: 'flex', overflowX: 'auto', gap: '0.5rem', scrollbarWidth: 'none' }}>
-            {QUICK.map(q => (
-              <button key={q} className="quick-reply-btn" onClick={() => sendMessage(q)}>
-                {q}
-              </button>
-            ))}
+            <h3 style={{ color: '#fff', fontSize: '1.2rem', marginBottom: '0.75rem' }}>AI Chat Locked</h3>
+            <p style={{ color: '#9ca3af', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: '2rem' }}>
+              The AI Chat Assistant is a premium feature. Upgrade to Pro or Enterprise to ask unlimited questions about your code's efficiency.
+            </p>
+            <Link to="/pricing" onClick={onClose} style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+              background: `linear-gradient(135deg, ${NEON_GREEN}, ${NEON_CYAN})`, color: '#000',
+              padding: '0.8rem 1.5rem', borderRadius: '8px', fontWeight: 600, textDecoration: 'none', fontSize: '0.9rem'
+            }}>
+              <Sparkles size={16} /> View Upgrade Plans
+            </Link>
           </div>
+        ) : (
+          /* Normal Chat UI for Paid Users */
+          <>
+            <div className="chat-scroll" style={{ flex: 1, overflowY: 'auto', padding: '1.5rem 1.25rem' }}>
+              {messages.map((m, i) => <MessageBubble key={i} msg={m} />)}
+              {loading && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '8px', background: `linear-gradient(135deg, ${NEON_GREEN}, ${NEON_CYAN})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Bot size={16} color="#000" />
+                  </div>
+                  <div style={{ background: 'rgba(0, 212, 255, 0.05)', border: '1px solid rgba(0, 212, 255, 0.2)', borderRadius: '4px 14px 14px 14px', padding: '0.5rem 1rem' }}>
+                    <TypingDots />
+                  </div>
+                </div>
+              )}
+              <div ref={bottomRef} />
+            </div>
+
+            {messages.length <= 1 && (
+              <div className="chat-scroll" style={{ padding: '0 1.25rem 1rem', display: 'flex', overflowX: 'auto', gap: '0.5rem', scrollbarWidth: 'none' }}>
+                {QUICK.map(q => (
+                  <button key={q} className="quick-reply-btn" onClick={() => sendMessage(q)}>
+                    {q}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', gap: '0.75rem', background: 'rgba(0,0,0,0.2)', borderRadius: '0 0 20px 20px' }}>
+              <input
+                className="chat-input"
+                placeholder="Ask about your code..."
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && sendMessage()}
+              />
+              <button
+                onClick={() => sendMessage()}
+                disabled={!input.trim() || loading}
+                style={{
+                  width: 44, height: 44, borderRadius: '12px', border: 'none', flexShrink: 0,
+                  background: input.trim() ? `linear-gradient(135deg, ${NEON_GREEN}, ${NEON_CYAN})` : 'rgba(255,255,255,0.05)',
+                  color: input.trim() ? '#000' : '#6b7280',
+                  cursor: input.trim() ? 'pointer' : 'not-allowed',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'all 0.2s',
+                  boxShadow: input.trim() ? '0 4px 15px rgba(0, 255, 204, 0.2)' : 'none'
+                }}
+              >
+                <Send size={18} style={{ marginLeft: input.trim() ? '2px' : '0' }} />
+              </button> 
+            </div>
+          </>
         )}
-
-        {/* Input Area */}
-        <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', gap: '0.75rem', background: 'rgba(0,0,0,0.2)', borderRadius: '0 0 20px 20px' }}>
-          <input
-            className="chat-input"
-            placeholder="Ask about your code..."
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && sendMessage()}
-          />
-          <button
-            onClick={() => sendMessage()}
-            disabled={!input.trim() || loading}
-            style={{
-              width: 44, height: 44, borderRadius: '12px', border: 'none', flexShrink: 0,
-              background: input.trim() ? `linear-gradient(135deg, ${NEON_GREEN}, ${NEON_CYAN})` : 'rgba(255,255,255,0.05)',
-              color: input.trim() ? '#000' : '#6b7280',
-              cursor: input.trim() ? 'pointer' : 'not-allowed',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'all 0.2s',
-              boxShadow: input.trim() ? '0 4px 15px rgba(0, 255, 204, 0.2)' : 'none'
-            }}
-          >
-            <Send size={18} style={{ marginLeft: input.trim() ? '2px' : '0' }} />
-          </button>
-        </div>
-
       </div>
     </>
   );
