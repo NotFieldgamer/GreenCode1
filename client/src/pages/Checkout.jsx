@@ -57,7 +57,7 @@ export default function Checkout() {
           <form onSubmit={handleCheckout}>
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', color: '#9ca3af', marginBottom: '0.5rem', fontSize: '0.85rem' }}>Name on Card</label>
-              <input type="text" required placeholder="name" style={{
+              <input type="text" required placeholder="Name" style={{
                 width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)',
                 border: '1px solid rgba(255,255,255,0.1)', color: '#fff', outline: 'none'
               }} />
@@ -67,7 +67,7 @@ export default function Checkout() {
               <label style={{ display: 'block', color: '#9ca3af', marginBottom: '0.5rem', fontSize: '0.85rem' }}>Card Number</label>
               <div style={{ position: 'relative' }}>
                 <CreditCard size={18} color="#9ca3af" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-                <input type="text" required placeholder="0000 0000 0000 0000" maxLength="19" style={{
+                <input type="text" required placeholder="0000 0000 0000 0000" maxLength="16" minLength="12" style={{
                   width: '100%', padding: '0.75rem 0.75rem 0.75rem 2.5rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)',
                   border: '1px solid rgba(255,255,255,0.1)', color: '#fff', outline: 'none'
                 }} />
@@ -81,7 +81,7 @@ export default function Checkout() {
               </div>
               <div>
                 <label style={{ display: 'block', color: '#9ca3af', marginBottom: '0.5rem', fontSize: '0.85rem' }}>CVC</label>
-                <input type="text" required placeholder="123" maxLength="3" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', outline: 'none' }} />
+                <input type="text" required placeholder="123" maxLength="3" minLength="3" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', outline: 'none' }} />
               </div>
             </div>
 
