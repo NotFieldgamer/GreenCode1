@@ -12,18 +12,25 @@ const analyzeRoutes     = require('./routes/analyze');
 const userRoutes        = require('./routes/user');
 const adminRoutes       = require('./routes/admin');
 const leaderboardRoutes = require('./routes/leaderboard');
-const {checkAchievements } = require('./routes/achievements');
-const achievementRoutes = require('./routes/achievements')
+const achievementRoutes = require('./routes/achievements');
 const chatRoutes        = require('./routes/chat');
 const generatorRoutes   = require('./routes/generator');
 
 const app  = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5000; // Render automatically injects this PORT
+
+// --- DEPLOYMENT CORS FIX ---
+// We allow localhost for your local testing, AND your future Vercel URL
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  process.env.FRONTEND_URL // You will add this in Render's dashboard later!
+].filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow any localhost port (Vite may use 5173, 5174, etc.) + no-origin requests
-    if (!origin || /^http:\/\/localhost(:\d+)?$/.test(origin)) {
+    // Allow if it's in our list, if it matches localhost regex, or if it's a direct backend hit (no origin)
+    if (!origin || allowedOrigins.includes(origin) || /^http:\/\/localhost(:\d+)?$/.test(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -31,6 +38,7 @@ app.use(cors({
   },
   credentials: true
 }));
+
 app.use(express.json());
 
 // Routes
@@ -43,19 +51,13 @@ app.use('/api/achievements', achievementRoutes);
 app.use('/api/chat',         chatRoutes);
 app.use('/api/generator',    generatorRoutes);
 
-// Auto-check achievements after analysis
-app.use('/api/analyze', (req, res, next) => {
-  if (req.method === 'POST' && req.user?.id) checkAchievements(req.user.id);
-  next();
-});
-
 app.get('/api/health', (req, res) =>
   res.json({ status: 'ok', message: 'GreenCode Premium API', timestamp: new Date().toISOString() })
 );
 
 app.listen(PORT, () => {
-  console.log(`\nGreenCode Premium API  ->  http://localhost:${PORT}`);
-  console.log(`  Plans        : Free | Pro ($9.99) | Enterprise ($29.99)`);
-  console.log(`  Generator    : Gemini 1.5 Flash ${process.env.GEMINI_API_KEY ? '[ACTIVE]' : '[template fallback]'}`);
-  console.log(`  Theme        : Science & Technology for a Sustainable Future\n`);
+  console.log(`\n🚀 GreenCode Premium API running on port ${PORT}`);
+  console.log(`🔌 Allowed Frontend URL: ${process.env.FRONTEND_URL || 'Localhost only'}`);
+  console.log(`🤖 Generator: Gemini ${process.env.GEMINI_API_KEY ? '[ACTIVE]' : '[MISSING KEY]'}`);
+  console.log(`🌍 Theme: Science & Technology for a Sustainable Future\n`);
 });
