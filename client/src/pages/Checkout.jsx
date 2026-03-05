@@ -57,7 +57,7 @@ export default function Checkout() {
           <form onSubmit={handleCheckout}>
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', color: '#9ca3af', marginBottom: '0.5rem', fontSize: '0.85rem' }}>Name on Card</label>
-              <input type="text" required placeholder="Pragya" style={{
+              <input type="text" required placeholder="name" style={{
                 width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(0,0,0,0.3)',
                 border: '1px solid rgba(255,255,255,0.1)', color: '#fff', outline: 'none'
               }} />
