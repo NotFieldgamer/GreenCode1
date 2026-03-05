@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { User, Mail, BarChart3, Zap, Leaf, Lock, Gem, Trophy, Check, TrendingUp, Loader2, ShieldCheck, KeyRound ,Code2 } from 'lucide-react';
+import { User, Mail, BarChart3, Zap, Leaf, Lock, Gem, Trophy, Check, TrendingUp, Loader2, ShieldCheck, KeyRound, Code2 } from 'lucide-react';
 
 // Assuming these match your project structure
 import { toast, ToastContainer } from '../components/Toast';
@@ -27,6 +27,7 @@ const profileStyles = `
     grid-template-columns: 1fr 1.2fr;
     gap: 1.5rem;
     align-items: start;
+    width: 100%;
   }
 
   @media (max-width: 992px) {
@@ -42,6 +43,9 @@ const profileStyles = `
     padding: 1.5rem;
     backdrop-filter: blur(12px);
     transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
   }
 
   .glass-panel:hover {
@@ -84,6 +88,7 @@ const profileStyles = `
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+    box-sizing: border-box;
   }
 
   .btn-primary:hover {
@@ -113,6 +118,18 @@ const profileStyles = `
     color: ${NEON_GREEN};
     font-weight: 700;
   }
+
+  /* MOBILE RESPONSIVENESS */
+  @media (max-width: 768px) {
+    .glass-panel {
+      padding: 1.25rem 1rem !important;
+    }
+    .avatar-box {
+      width: 60px !important;
+      height: 60px !important;
+      font-size: 1.5rem !important;
+    }
+  }
 `;
 
 /* ================= ACHIEVEMENT BADGE ================= */
@@ -121,19 +138,21 @@ function AchievementBadge({ badge }) {
   
   return (
     <div
-      title={`${badge.name}: ${badge.desc}${isUnlocked ? `\nUnlocked: ${new Date(badge.unlockedAt).toLocaleDateString()}` : ''}`}
+      title={badge.name + ': ' + badge.desc + (isUnlocked ? '\nUnlocked: ' + new Date(badge.unlockedAt).toLocaleDateString() : '')}
       style={{
         background: isUnlocked ? 'rgba(255, 184, 77, 0.05)' : 'rgba(0, 0, 0, 0.3)',
         border: `1px solid ${isUnlocked ? 'rgba(255, 184, 77, 0.3)' : 'rgba(255, 255, 255, 0.05)'}`,
         borderRadius: '16px',
-        padding: '1.25rem 1rem',
+        padding: '1.25rem 0.75rem',
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6rem', textAlign: 'center',
         opacity: isUnlocked ? 1 : 0.6,
         filter: isUnlocked ? 'none' : 'grayscale(0.8)',
         transition: 'all 0.3s',
         cursor: 'default',
         position: 'relative',
-        boxShadow: isUnlocked ? `0 4px 20px rgba(255, 184, 77, 0.1)` : 'none'
+        boxShadow: isUnlocked ? `0 4px 20px rgba(255, 184, 77, 0.1)` : 'none',
+        width: '100%',
+        boxSizing: 'border-box'
       }}
       onMouseEnter={e => { if(isUnlocked) e.currentTarget.style.transform = 'translateY(-3px)'; }}
       onMouseLeave={e => { if(isUnlocked) e.currentTarget.style.transform = 'translateY(0)'; }}
@@ -144,7 +163,8 @@ function AchievementBadge({ badge }) {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         color: isUnlocked ? '#000' : '#6b7280',
         boxShadow: isUnlocked ? `0 0 15px ${GOLD}60` : 'none',
-        marginBottom: '0.2rem'
+        marginBottom: '0.2rem',
+        flexShrink: 0
       }}>
         <Trophy size={22} />
       </div>
@@ -221,16 +241,16 @@ export default function Profile() {
   const unlockedCount = achievements.filter(a => a.unlocked).length;
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '1.5rem 0', width: '100%', boxSizing: 'border-box' }}>
       <style>{profileStyles}</style>
       <ToastContainer />
       
       {/* Header */}
       <div style={{ marginBottom: '2.5rem' }}>
-        <h1 style={{ fontSize: '2.2rem', fontWeight: 700, margin: '0 0 0.5rem 0', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <h1 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.2rem)', fontWeight: 700, margin: '0 0 0.5rem 0', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
           <User size={28} color={NEON_CYAN} /> My Profile
         </h1>
-        <p style={{ color: '#9ca3af', fontSize: '1.05rem', margin: 0 }}>
+        <p style={{ color: '#9ca3af', fontSize: '1rem', margin: 0, lineHeight: 1.5 }}>
           Manage your account details, preferences, and view your sustainability legacy.
         </p>
       </div>
@@ -244,34 +264,34 @@ export default function Profile() {
         <div className="profile-grid">
           
           {/* ================= LEFT COLUMN ================= */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', minWidth: 0 }}>
 
             {/* User Identity Card */}
             <div className="glass-panel" style={{ position: 'relative', overflow: 'hidden' }}>
               {/* Decorative Background Glow */}
               <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '150px', height: '150px', background: `${NEON_CYAN}20`, filter: 'blur(50px)', borderRadius: '50%', pointerEvents: 'none' }} />
               
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem' }}>
-                <div style={{ 
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
+                <div className="avatar-box" style={{ 
                   width: 80, height: 80, borderRadius: '20px', 
                   background: `linear-gradient(135deg, rgba(0,212,255,0.1), rgba(0,255,204,0.1))`, 
                   border: `1px solid ${NEON_CYAN}40`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '2rem', fontWeight: 700, color: '#fff', textTransform: 'uppercase',
-                  boxShadow: `0 8px 25px ${NEON_CYAN}20`
+                  boxShadow: `0 8px 25px ${NEON_CYAN}20`, flexShrink: 0
                 }}>
                   {user?.avatar || user?.name?.[0] || 'U'}
                 </div>
-                <div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#fff', marginBottom: '0.2rem' }}>{user?.name || 'Developer'}</div>
-                  <div style={{ color: '#9ca3af', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.6rem' }}>
-                    <Mail size={14} /> {user?.email || 'user@example.com'}
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: 'clamp(1.2rem, 3vw, 1.5rem)', fontWeight: 700, color: '#fff', marginBottom: '0.2rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name || 'Developer'}</div>
+                  <div style={{ color: '#9ca3af', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.6rem', flexWrap: 'wrap', wordBreak: 'break-all' }}>
+                    <Mail size={14} style={{flexShrink: 0}} /> {user?.email || 'user@example.com'}
                   </div>
                   <span style={{ 
                     background: user?.role === 'admin' ? 'rgba(167, 139, 250, 0.15)' : 'rgba(0, 212, 255, 0.15)', 
                     color: user?.role === 'admin' ? NEON_PURPLE : NEON_CYAN, 
                     border: `1px solid ${user?.role === 'admin' ? NEON_PURPLE : NEON_CYAN}40`,
-                    padding: '0.2rem 0.6rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' 
+                    padding: '0.2rem 0.6rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'inline-block'
                   }}>
                     {user?.role || 'User'}
                   </span>
@@ -284,7 +304,7 @@ export default function Profile() {
                   { label: 'Account Status', value: <span style={{ color: NEON_GREEN, display: 'flex', alignItems: 'center', gap: '4px' }}><ShieldCheck size={14}/> Active</span> },
                   { label: 'Badges Unlocked', value: `${unlockedCount} / ${achievements.length || 0}` },
                 ].map(row => (
-                  <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.85rem 1rem', borderRadius: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.03)' }}>
+                  <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.85rem 1rem', borderRadius: '10px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.03)', flexWrap: 'wrap', gap: '0.5rem' }}>
                     <span style={{ color: '#9ca3af', fontSize: '0.9rem' }}>{row.label}</span>
                     <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#e5e7eb' }}>{row.value}</span>
                   </div>
@@ -294,7 +314,7 @@ export default function Profile() {
 
             {/* Plan & Billing Card */}
             <div className="glass-panel" style={{ borderTop: `3px solid ${PLAN_COLORS[plan] || '#fff'}` }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontWeight: 700, fontSize: '1.2rem', color: '#fff' }}>
                   <Gem size={20} color={PLAN_COLORS[plan] || '#fff'} style={{ filter: `drop-shadow(0 0 8px ${PLAN_COLORS[plan]}80)` }} />
                   {planName || 'Free'} Plan
@@ -308,7 +328,7 @@ export default function Profile() {
 
               {(isPro || isEnterprise) && (
                 <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '1.5rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                     <span style={{ color: '#9ca3af', fontSize: '0.9rem' }}>AI Generator Credits</span>
                     <span style={{ color: credits <= 5 ? '#ef4444' : NEON_GREEN, fontWeight: 800, fontSize: '1.2rem', fontFamily: 'monospace' }}>{credits}</span>
                   </div>
@@ -373,28 +393,28 @@ export default function Profile() {
           </div>
 
           {/* ================= RIGHT COLUMN ================= */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', minWidth: 0 }}>
 
             {/* Mini Stats Grid */}
-            <div className="glass-panel" style={{ padding: '2rem' }}>
+            <div className="glass-panel" style={{ padding: '1.5rem' }}>
               <div style={{ fontWeight: 600, fontSize: '1.2rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#fff' }}>
                 <BarChart3 size={20} color={NEON_GREEN} /> Lifetime Impact
               </div>
               
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '1rem', width: '100%' }}>
                 {stats && [
                   { icon: <Code2 size={18} />, label: 'Total Scans', value: stats.totalAnalyses || 0, color: NEON_CYAN, glow: 'rgba(0, 212, 255, 0.1)' },
                   { icon: <Leaf size={18} />, label: 'Avg Score', value: stats.avgSustainability || 0, color: NEON_GREEN, glow: 'rgba(0, 255, 204, 0.1)', suffix: '/100' },
                   { icon: <Zap size={18} />, label: 'Energy Saved', value: stats.totalEnergySaved || 0, color: GOLD, glow: 'rgba(255, 184, 77, 0.1)', suffix: ' kWh' },
                   { icon: <TrendingUp size={18} />, label: 'CO₂ Offset', value: stats.totalCO2Offset || 0, color: '#f87171', glow: 'rgba(248, 113, 113, 0.1)', suffix: ' g' },
                 ].map((s, i) => (
-                  <div key={i} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div key={i} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', boxSizing: 'border-box' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#9ca3af', fontSize: '0.85rem', fontWeight: 500 }}>
-                      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: '6px', background: s.glow, color: s.color }}>{s.icon}</span>
-                      {s.label}
+                      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: '6px', background: s.glow, color: s.color, flexShrink: 0 }}>{s.icon}</span>
+                      <span style={{ whiteSpace: 'nowrap' }}>{s.label}</span>
                     </div>
-                    <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fff', fontFamily: 'monospace' }}>
-                      {s.value}<span style={{ fontSize: '0.9rem', color: '#6b7280', fontWeight: 600, marginLeft: '2px' }}>{s.suffix}</span>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', fontFamily: 'monospace', display: 'flex', alignItems: 'baseline', flexWrap: 'wrap' }}>
+                      {s.value}<span style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: 600, marginLeft: '4px' }}>{s.suffix}</span>
                     </div>
                   </div>
                 ))}
@@ -414,11 +434,11 @@ export default function Profile() {
               </div>
               
               {achievements.length > 0 ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 130px), 1fr))', gap: '1rem', width: '100%' }}>
                   {achievements.map(badge => <AchievementBadge key={badge.id} badge={badge} />)}
                 </div>
               ) : (
-                <div style={{ padding: '3rem', textAlign: 'center', color: '#6b7280', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                <div style={{ padding: '3rem 1.5rem', textAlign: 'center', color: '#6b7280', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.1)' }}>
                   Start analyzing code to earn your first sustainability badges!
                 </div>
               )}

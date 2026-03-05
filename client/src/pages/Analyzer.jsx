@@ -33,12 +33,8 @@ const analyzerStyles = `
     margin: 0 auto;
     padding: 1rem 0;
     align-items: start;
-  }
-
-  @media (max-width: 992px) {
-    .analyzer-grid {
-      grid-template-columns: 1fr;
-    }
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .glass-panel {
@@ -47,6 +43,8 @@ const analyzerStyles = `
     border-radius: 16px;
     backdrop-filter: blur(12px);
     overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .ide-header {
@@ -56,6 +54,15 @@ const analyzerStyles = `
     padding: 0.75rem 1.25rem;
     background: rgba(0, 0, 0, 0.4);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .ide-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
   }
 
   .mac-dots {
@@ -67,22 +74,6 @@ const analyzerStyles = `
     width: 12px;
     height: 12px;
     border-radius: 50%;
-  }
-
-  .lang-select {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #fff;
-    padding: 0.4rem 2rem 0.4rem 0.8rem;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    outline: none;
-    appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 0.5rem center;
-    background-size: 14px;
-    cursor: pointer;
   }
 
   .code-textarea {
@@ -101,19 +92,30 @@ const analyzerStyles = `
   }
 
   /* Custom Scrollbar for Textarea */
-  .code-textarea::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+  .code-textarea::-webkit-scrollbar { width: 10px; height: 10px; }
+  .code-textarea::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
+  .code-textarea::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 5px; }
+  .code-textarea::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+
+  .bottom-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-top: 1.5rem;
+    gap: 1.5rem;
+    flex-wrap: wrap; /* CRITICAL: Allows stacking on mobile */
   }
-  .code-textarea::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2);
+
+  .chart-wrapper {
+    flex: 1;
+    min-width: 280px;
+    max-width: 100%;
   }
-  .code-textarea::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 5px;
-  }
-  .code-textarea::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2);
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); /* CRITICAL: Allows metrics to shrink properly */
+    gap: 1rem;
   }
 
   .chat-fab {
@@ -143,6 +145,39 @@ const analyzerStyles = `
   .chat-fab.active {
     background: #fff;
     box-shadow: 0 4px 20px rgba(255, 255, 255, 0.3);
+  }
+
+  /* MOBILE SPECIFIC BREAKPOINTS */
+  @media (max-width: 992px) {
+    .analyzer-grid {
+      grid-template-columns: 1fr;
+    }
+    .code-textarea {
+      min-height: 350px;
+      padding: 1rem;
+    }
+    .ide-header {
+      justify-content: center;
+    }
+    .ide-controls {
+      justify-content: center;
+      width: 100%;
+    }
+    .bottom-actions {
+      flex-direction: column;
+    }
+    .chart-wrapper {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .chat-fab {
+      bottom: 1.5rem;
+      right: 1.5rem;
+      width: 50px;
+      height: 50px;
+    }
   }
 `;
 
@@ -338,16 +373,16 @@ export default function Analyzer() {
                 <div className="mac-dot" style={{ background: '#27c93f' }} />
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div className="ide-controls">
                 <CustomSelect 
-  value={language} 
-  options={LANGUAGES}
-  themeColor={NEON_CYAN}
-  onChange={(val) => {
-    setLanguage(val);
-    if (code) analyze(code, val);
-  }} 
-/>
+                  value={language} 
+                  options={LANGUAGES}
+                  themeColor={NEON_CYAN}
+                  onChange={(val) => {
+                    setLanguage(val);
+                    if (code) analyze(code, val);
+                  }} 
+                />
 
                 <button
                   onClick={() => analyze(code, language)}
@@ -377,7 +412,7 @@ export default function Analyzer() {
           </div>
 
           {result && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '1.5rem', gap: '1.5rem' }}>
+            <div className="bottom-actions">
               <button onClick={downloadReport} style={{
                 display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.05)',
                 color: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px',
@@ -386,7 +421,7 @@ export default function Analyzer() {
                 <Download size={16} /> Export Report
               </button>
 
-              <div style={{ flex: 1, maxWidth: '400px' }}>
+              <div className="chart-wrapper">
                 <ComplexityChart detected={result.complexity} energyCostKwh={result.energyCostKwh} />
               </div>
             </div>
@@ -399,7 +434,7 @@ export default function Analyzer() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               
               {/* Score Card */}
-              <div className="glass-panel" style={{ padding: '2rem' }}>
+              <div className="glass-panel" style={{ padding: '1.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff', fontWeight: 600, fontSize: '1.1rem', justifyContent: 'center' }}>
                   <Lightbulb size={18} color={NEON_AMBER} /> AI Efficiency Rating
                 </div>
@@ -417,7 +452,7 @@ export default function Analyzer() {
                   <Zap size={18} color={NEON_CYAN} /> Projected Impact
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="metrics-grid">
                   <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1.25rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.03)' }}>
                     <div style={{ color: '#9ca3af', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.5rem' }}>Energy Cost</div>
                     <div style={{ color: '#fff', fontSize: '1.4rem', fontWeight: 700, fontFamily: 'monospace' }}>{result.energyScore} <span style={{fontSize:'0.8rem', color:'#6b7280'}}>kWh</span></div>
@@ -432,7 +467,7 @@ export default function Analyzer() {
 
             </div>
           ) : limitReached ? (
-            <div className="glass-panel" style={{ padding: '3rem 2rem', textAlign: 'center', border: `1px solid ${NEON_RED}40`, background: `${NEON_RED}10` }}>
+            <div className="glass-panel" style={{ padding: '3rem 1.5rem', textAlign: 'center', border: `1px solid ${NEON_RED}40`, background: `${NEON_RED}10` }}>
               <AlertTriangle size={48} color={NEON_RED} style={{ margin: '0 auto 1.5rem' }} />
               <h3 style={{ margin: '0 0 1rem', fontSize: '1.3rem' }}>Analysis Limit Reached</h3>
               <p style={{ color: '#9ca3af', marginBottom: '2rem', lineHeight: 1.6 }}>You have exhausted your free monthly AI analysis quota. Upgrade to Pro for unlimited scans.</p>
@@ -444,7 +479,7 @@ export default function Analyzer() {
               </Link>
             </div>
           ) : (
-            <div className="glass-panel" style={{ padding: '4rem 2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div className="glass-panel" style={{ padding: '3rem 1.5rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div style={{ width: 80, height: 80, background: 'rgba(0,212,255,0.05)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', border: `1px solid ${NEON_CYAN}20` }}>
                 <Terminal size={32} color={NEON_CYAN} />
               </div>

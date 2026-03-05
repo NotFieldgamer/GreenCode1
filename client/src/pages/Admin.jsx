@@ -32,6 +32,9 @@ const adminStyles = `
     padding: 1.5rem;
     backdrop-filter: blur(12px);
     transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0; /* CRITICAL: Stops flex/grid children from overflowing */
   }
 
   .glass-panel:hover {
@@ -52,6 +55,7 @@ const adminStyles = `
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    white-space: nowrap; /* Keeps tab text on one line */
   }
 
   .admin-tab:hover {
@@ -71,6 +75,7 @@ const adminStyles = `
     border-collapse: separate;
     border-spacing: 0;
     text-align: left;
+    min-width: 800px; /* Forces wide table, allows parent wrapper to scroll horizontally */
   }
 
   .glass-table th {
@@ -82,6 +87,7 @@ const adminStyles = `
     padding: 1.25rem 1rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(0,0,0,0.2);
+    white-space: nowrap;
   }
 
   .glass-table td {
@@ -109,6 +115,7 @@ const adminStyles = `
     font-size: 0.9rem;
     outline: none;
     transition: all 0.2s;
+    box-sizing: border-box;
   }
 
   .admin-input:focus, .admin-select:focus {
@@ -132,6 +139,13 @@ const adminStyles = `
     padding: 1rem;
     box-shadow: 0 4px 20px rgba(0,0,0,0.6);
     color: #fff;
+  }
+
+  /* MOBILE RESPONSIVENESS */
+  @media (max-width: 768px) {
+    .glass-panel {
+      padding: 1.25rem 1rem !important;
+    }
   }
 `;
 
@@ -261,11 +275,11 @@ export default function Admin() {
   return (
     <Page title="Admin Control Center" desc="Platform-wide analytics, user management, and detection logs.">
       <style>{adminStyles}</style>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '1400px', margin: '0 auto', paddingBottom: '2rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '1400px', margin: '0 auto', paddingBottom: '2rem', width: '100%', boxSizing: 'border-box' }}>
         <ToastContainer />
 
         {/* ── TABS ── */}
-        <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', padding: '0.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', padding: '0.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.05)', width: '100%' }}>
           {TABS.map(t => (
             <button key={t} className={`admin-tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
               {t === 'Overview' && <MdGpsFixed size={16} />}
@@ -287,8 +301,8 @@ export default function Admin() {
           <>
             {/* ── OVERVIEW ── */}
             {tab === 'Overview' && stats && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', animation: 'fadeSlideUp 0.4s ease' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', animation: 'fadeSlideUp 0.4s ease', width: '100%' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '1rem', width: '100%' }}>
                   {[
                     { label: 'Total Users', value: stats.totalUsers, color: NEON_GREEN, icon: <MdPeople /> },
                     { label: 'Total Analyses', value: stats.totalAnalyses, color: NEON_CYAN, icon: <MdCode /> },
@@ -296,45 +310,49 @@ export default function Admin() {
                     { label: 'Avg Sust. Score', value: stats.avgScore, color: NEON_PURPLE, icon: <MdShield /> },
                   ].map(s => (
                     <div className="glass-panel" key={s.label} style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1.25rem' }}>
-                      <div style={{ width: 48, height: 48, borderRadius: '12px', background: `${s.color}20`, border: `1px solid ${s.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color, fontSize: '1.5rem' }}>
+                      <div style={{ width: 48, height: 48, borderRadius: '12px', background: `${s.color}20`, border: `1px solid ${s.color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color, fontSize: '1.5rem', flexShrink: 0 }}>
                         {s.icon}
                       </div>
-                      <div>
-                        <div style={{ color: '#9ca3af', fontSize: '0.85rem', fontWeight: 500, marginBottom: '0.25rem' }}>{s.label}</div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ color: '#9ca3af', fontSize: '0.85rem', fontWeight: 500, marginBottom: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.label}</div>
                         <div style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 700, fontFamily: 'monospace' }}>{s.value}</div>
                       </div>
                     </div>
                   ))}
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '1.5rem' }}>
-                  <div className="glass-panel">
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 400px), 1fr))', gap: '1.5rem', width: '100%' }}>
+                  <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
                     <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <MdBolt color={GOLD} /> Analyses Per Day
                     </h3>
-                    <ResponsiveContainer width="100%" height={260}>
-                      <BarChart data={stats.timeSeries} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                        <XAxis dataKey="name" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} dy={10} />
-                        <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
-                        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
-                        <Bar dataKey="analyses" fill={NEON_CYAN} radius={[4, 4, 0, 0]} name="Analyses" />
-                      </BarChart>
-                    </ResponsiveContainer>
+                    <div style={{ flex: 1, minHeight: 260, width: '100%', position: 'relative' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={stats.timeSeries} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                          <XAxis dataKey="name" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} dy={10} />
+                          <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
+                          <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                          <Bar dataKey="analyses" fill={NEON_CYAN} radius={[4, 4, 0, 0]} name="Analyses" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
 
-                  <div className="glass-panel">
+                  <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
                     <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <MdCode color={NEON_GREEN} /> Detection Breakdown
                     </h3>
-                    <ResponsiveContainer width="100%" height={260}>
-                      <PieChart>
-                        <Pie data={stats.detectionBreakdown} cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={3} dataKey="value" stroke="none">
-                          {stats.detectionBreakdown.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                        </Pie>
-                        <Tooltip content={<CustomTooltip />} />
-                      </PieChart>
-                    </ResponsiveContainer>
+                    <div style={{ flex: 1, minHeight: 260, width: '100%', position: 'relative' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie data={stats.detectionBreakdown} cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={3} dataKey="value" stroke="none">
+                            {stats.detectionBreakdown.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                          </Pie>
+                          <Tooltip content={<CustomTooltip />} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -342,21 +360,21 @@ export default function Admin() {
 
             {/* ── USERS ── */}
             {tab === 'Users' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', animation: 'fadeSlideUp 0.4s ease' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', animation: 'fadeSlideUp 0.4s ease', width: '100%' }}>
                 <div className="glass-panel" style={{ padding: '1rem 1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
                   <input
                     placeholder="Search name or email..."
                     className="admin-input"
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    style={{ flex: 1, minWidth: '250px' }}
+                    style={{ flex: '1 1 100%', minWidth: 'min(100%, 250px)' }}
                   />
-                  <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="admin-select" style={{ minWidth: '150px' }}>
+                  <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="admin-select" style={{ flex: '1 1 auto', minWidth: '150px' }}>
                     <option value="all">All Statuses</option>
                     <option value="active">Active</option>
                     <option value="suspended">Suspended</option>
                   </select>
-                  <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="admin-select" style={{ minWidth: '150px' }}>
+                  <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="admin-select" style={{ flex: '1 1 auto', minWidth: '150px' }}>
                     <option value="all">All Roles</option>
                     <option value="user">User</option>
                     <option value="admin">Admin</option>
@@ -368,7 +386,7 @@ export default function Admin() {
                     <MdPeople size={20} color={NEON_CYAN} />
                     <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#fff' }}>User Management ({filteredUsers.length})</h3>
                   </div>
-                  <div style={{ overflowX: 'auto' }}>
+                  <div style={{ overflowX: 'auto', width: '100%' }}>
                     <table className="glass-table">
                       <thead>
                         <tr><th>Name</th><th>Email</th><th>Role</th><th>Analyses</th><th>Status</th><th>Actions</th></tr>
@@ -378,10 +396,10 @@ export default function Admin() {
                           <tr key={u.id}>
                             <td>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <div style={{ width: 32, height: 32, borderRadius: '8px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '0.8rem', color: '#fff' }}>
+                                <div style={{ width: 32, height: 32, borderRadius: '8px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '0.8rem', color: '#fff', flexShrink: 0 }}>
                                   {u.avatar || u.name[0]}
                                 </div>
-                                <span style={{ fontWeight: 600, color: '#e5e7eb' }}>{u.name}</span>
+                                <span style={{ fontWeight: 600, color: '#e5e7eb', whiteSpace: 'nowrap' }}>{u.name}</span>
                               </div>
                             </td>
                             <td style={{ color: '#9ca3af', fontSize: '0.85rem' }}>{u.email}</td>
@@ -401,7 +419,7 @@ export default function Admin() {
                                 display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
                                 background: u.active ? `${NEON_GREEN}15` : `${NEON_RED}15`, 
                                 color: u.active ? NEON_GREEN : NEON_RED, 
-                                padding: '0.25rem 0.6rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600 
+                                padding: '0.25rem 0.6rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, whiteSpace: 'nowrap'
                               }}>
                                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: u.active ? NEON_GREEN : NEON_RED }} />
                                 {u.active ? 'Active' : 'Suspended'}
@@ -412,7 +430,7 @@ export default function Admin() {
                                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                                   <button onClick={() => toggleUser(u.id)} title={u.active ? 'Suspend' : 'Activate'} style={{ 
                                     background: u.active ? 'rgba(239, 68, 68, 0.1)' : 'rgba(0, 255, 204, 0.1)', 
-                                    color: u.active ? NEON_RED : NEON_GREEN, border: 'none', borderRadius: '6px', padding: '0.4rem 0.6rem', cursor: 'pointer', transition: 'background 0.2s', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', fontWeight: 600 
+                                    color: u.active ? NEON_RED : NEON_GREEN, border: 'none', borderRadius: '6px', padding: '0.4rem 0.6rem', cursor: 'pointer', transition: 'background 0.2s', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', fontWeight: 600, whiteSpace: 'nowrap'
                                   }}>
                                     {u.active ? <MdToggleOff size={16} /> : <MdToggleOn size={16} />} {u.active ? 'Suspend' : 'Activate'}
                                   </button>
@@ -435,8 +453,8 @@ export default function Admin() {
 
             {/* ── SUBSCRIPTIONS ── */}
             {tab === 'Subscriptions' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', animation: 'fadeSlideUp 0.4s ease' }}>
-                <div className="glass-panel" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', background: `linear-gradient(135deg, ${NEON_PURPLE}15, rgba(0,0,0,0.4))` }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', animation: 'fadeSlideUp 0.4s ease', width: '100%' }}>
+                <div className="glass-panel" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '1.5rem', background: `linear-gradient(135deg, ${NEON_PURPLE}15, rgba(0,0,0,0.4))` }}>
                   <div>
                     <div style={{ fontSize: '0.85rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.4rem' }}>Monthly Revenue</div>
                     <div style={{ fontSize: '2.2rem', fontWeight: 700, fontFamily: 'monospace', color: NEON_PURPLE }}>${subs.monthlyRevenue}</div>
@@ -460,7 +478,7 @@ export default function Admin() {
                     <MdDiamond size={20} color={NEON_PURPLE} />
                     <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#fff' }}>Subscription Management</h3>
                   </div>
-                  <div style={{ overflowX: 'auto' }}>
+                  <div style={{ overflowX: 'auto', width: '100%' }}>
                     <table className="glass-table">
                       <thead>
                         <tr><th>User</th><th>Plan</th><th>Credits</th><th>Resets</th><th>Change Plan</th><th>Grant Credits</th></tr>
@@ -470,11 +488,11 @@ export default function Admin() {
                           <tr key={u.id}>
                             <td>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <div style={{ width: 32, height: 32, borderRadius: '8px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '0.8rem', color: '#fff' }}>
+                                <div style={{ width: 32, height: 32, borderRadius: '8px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '0.8rem', color: '#fff', flexShrink: 0 }}>
                                   {u.avatar || u.name[0]}
                                 </div>
                                 <div>
-                                  <div style={{ fontWeight: 600, color: '#e5e7eb', fontSize: '0.9rem' }}>{u.name}</div>
+                                  <div style={{ fontWeight: 600, color: '#e5e7eb', fontSize: '0.9rem', whiteSpace: 'nowrap' }}>{u.name}</div>
                                   <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{u.email}</div>
                                 </div>
                               </div>
@@ -484,13 +502,13 @@ export default function Admin() {
                                 background: u.plan === 'enterprise' ? `${NEON_PURPLE}20` : u.plan === 'pro' ? `${NEON_CYAN}20` : 'rgba(255,255,255,0.05)', 
                                 color: u.plan === 'enterprise' ? NEON_PURPLE : u.plan === 'pro' ? NEON_CYAN : '#9ca3af', 
                                 border: `1px solid ${u.plan === 'enterprise' ? NEON_PURPLE : u.plan === 'pro' ? NEON_CYAN : 'rgba(255,255,255,0.2)'}40`,
-                                padding: '0.2rem 0.6rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' 
+                                padding: '0.2rem 0.6rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', whiteSpace: 'nowrap'
                               }}>
                                 {u.planName || u.plan}
                               </span>
                             </td>
                             <td style={{ fontFamily: 'monospace', fontWeight: 800, color: u.credits <= 5 ? NEON_RED : NEON_GREEN, fontSize: '1.1rem' }}>{u.credits}</td>
-                            <td style={{ fontSize: '0.85rem', color: '#9ca3af' }}>{u.creditsResetAt ? new Date(u.creditsResetAt).toLocaleDateString() : '—'}</td>
+                            <td style={{ fontSize: '0.85rem', color: '#9ca3af', whiteSpace: 'nowrap' }}>{u.creditsResetAt ? new Date(u.creditsResetAt).toLocaleDateString() : '—'}</td>
                             <td>
                               <select
                                 value={u.plan}
@@ -518,7 +536,7 @@ export default function Admin() {
                                     background: creditInputs[u.id] ? `linear-gradient(135deg, ${NEON_GREEN}, ${NEON_CYAN})` : 'rgba(255,255,255,0.05)',
                                     color: creditInputs[u.id] ? '#000' : '#6b7280',
                                     border: 'none', borderRadius: '6px', padding: '0.4rem 0.8rem', fontSize: '0.8rem', fontWeight: 700,
-                                    cursor: creditInputs[u.id] ? 'pointer' : 'not-allowed', transition: 'all 0.2s'
+                                    cursor: creditInputs[u.id] ? 'pointer' : 'not-allowed', transition: 'all 0.2s', whiteSpace: 'nowrap'
                                   }}
                                 >
                                   <MdAutoAwesome /> Grant
@@ -541,7 +559,7 @@ export default function Admin() {
                   <MdCode size={20} color={GOLD} />
                   <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#fff' }}>Detection Log ({detections.length})</h3>
                 </div>
-                <div style={{ overflowX: 'auto' }}>
+                <div style={{ overflowX: 'auto', width: '100%' }}>
                   <table className="glass-table">
                     <thead>
                       <tr><th>User</th><th>Detection Type</th><th>Severity</th><th>Timestamp</th></tr>
@@ -551,8 +569,8 @@ export default function Admin() {
                         const sev = SEV_MAP[d.severity] || SEV_MAP.medium;
                         return (
                           <tr key={d.id}>
-                            <td style={{ fontWeight: 600, color: '#e5e7eb' }}>{d.userName}</td>
-                            <td><span style={{ fontFamily: 'monospace', color: '#a78bfa' }}>{d.type.replace(/_/g, ' ')}</span></td>
+                            <td style={{ fontWeight: 600, color: '#e5e7eb', whiteSpace: 'nowrap' }}>{d.userName}</td>
+                            <td><span style={{ fontFamily: 'monospace', color: '#a78bfa', whiteSpace: 'nowrap' }}>{d.type.replace(/_/g, ' ')}</span></td>
                             <td>
                               <span style={{ 
                                 background: sev.bg, color: sev.color, border: `1px solid ${sev.color}40`,
@@ -561,7 +579,7 @@ export default function Admin() {
                                 {d.severity}
                               </span>
                             </td>
-                            <td style={{ color: '#9ca3af', fontSize: '0.85rem' }}>{new Date(d.timestamp).toLocaleString()}</td>
+                            <td style={{ color: '#9ca3af', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>{new Date(d.timestamp).toLocaleString()}</td>
                           </tr>
                         );
                       })}
@@ -573,8 +591,8 @@ export default function Admin() {
 
             {/* ── ENERGY ── */}
             {tab === 'Energy' && stats && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', animation: 'fadeSlideUp 0.4s ease' }}>
-                <div className="glass-panel" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem', padding: '2rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', animation: 'fadeSlideUp 0.4s ease', width: '100%' }}>
+                <div className="glass-panel" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '2rem', padding: '2rem' }}>
                   <div>
                     <div style={{ fontSize: '0.85rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.5rem' }}>Total Platform Energy</div>
                     <div style={{ fontSize: '2.5rem', fontWeight: 700, fontFamily: 'monospace', color: GOLD }}>
@@ -593,21 +611,23 @@ export default function Admin() {
                   <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <MdBolt color={GOLD} /> Energy Consumption by User
                   </h3>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={stats.energyPerUser} layout="vertical" margin={{ top: 0, right: 20, left: 20, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="energyGradAdmin" x1="0" y1="0" x2="1" y2="0">
-                          <stop offset="0%" stopColor={GOLD} stopOpacity={0.6}/>
-                          <stop offset="100%" stopColor={GOLD} stopOpacity={1}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
-                      <XAxis type="number" tick={{ fill: '#9ca3af', fontSize: 12 }} axisLine={false} />
-                      <YAxis type="category" dataKey="name" tick={{ fill: '#e5e7eb', fontSize: 12, fontWeight: 500 }} axisLine={false} width={80} />
-                      <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-                      <Bar dataKey="energy" fill="url(#energyGradAdmin)" radius={[0, 4, 4, 0]} name="Energy (kWh)" barSize={20} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <div style={{ flex: 1, minHeight: 300, width: '100%', position: 'relative' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={stats.energyPerUser} layout="vertical" margin={{ top: 0, right: 20, left: 20, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="energyGradAdmin" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stopColor={GOLD} stopOpacity={0.6}/>
+                            <stop offset="100%" stopColor={GOLD} stopOpacity={1}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
+                        <XAxis type="number" tick={{ fill: '#9ca3af', fontSize: 12 }} axisLine={false} />
+                        <YAxis type="category" dataKey="name" tick={{ fill: '#e5e7eb', fontSize: 12, fontWeight: 500 }} axisLine={false} width={80} />
+                        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+                        <Bar dataKey="energy" fill="url(#energyGradAdmin)" radius={[0, 4, 4, 0]} name="Energy (kWh)" barSize={20} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
               </div>
             )}

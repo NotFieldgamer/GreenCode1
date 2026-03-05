@@ -34,6 +34,10 @@ const dashboardStyles = `
     padding: 1.5rem;
     backdrop-filter: blur(12px);
     transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    /* CRITICAL: Stops charts from forcing the container to stay wide */
+    min-width: 0; 
+    box-sizing: border-box;
+    width: 100%;
   }
   
   .glass-panel:hover {
@@ -43,16 +47,20 @@ const dashboardStyles = `
 
   .stat-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    /* Changed from 240px to min(100%, 240px) to allow phone scaling */
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
     gap: 1.5rem;
     margin-bottom: 2rem;
+    width: 100%;
   }
 
   .chart-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    /* Changed from 400px to min(100%, 400px) to stop mobile overflow */
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr));
     gap: 1.5rem;
     margin-bottom: 2rem;
+    width: 100%;
   }
 
   .glass-table {
@@ -60,6 +68,7 @@ const dashboardStyles = `
     border-collapse: separate;
     border-spacing: 0;
     text-align: left;
+    min-width: 600px; /* Forces table to allow horizontal scrolling rather than squishing */
   }
 
   .glass-table th {
@@ -95,7 +104,6 @@ const dashboardStyles = `
     cursor: pointer;
   }
 
-  /* Custom Recharts Tooltip styling */
   .recharts-tooltip-wrapper .glass-tooltip {
     background: rgba(10, 10, 20, 0.9) !important;
     border: 1px solid rgba(0, 255, 204, 0.3) !important;
@@ -103,6 +111,13 @@ const dashboardStyles = `
     padding: 1rem;
     box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     color: #fff;
+  }
+
+  /* Reduce padding on mobile */
+  @media (max-width: 768px) {
+    .glass-panel {
+      padding: 1.25rem 1rem !important;
+    }
   }
 `;
 
@@ -133,7 +148,6 @@ export default function Dashboard() {
   const [comparing, setComparing] = useState(false);
 
   useEffect(() => {
-    // Simulated delay for UI demonstration if needed, otherwise rely on your API
     Promise.all([
       api.get('/user/stats').catch(() => ({ data: { totalAnalyses: 0, avgSustainability: 0, totalEnergySaved: 0, totalCO2Offset: 0, chartData: [], detectionBreakdown: [] } })),
       api.get('/user/history').catch(() => ({ data: [] }))
@@ -186,7 +200,7 @@ export default function Dashboard() {
           <div style={{ color: '#9ca3af', fontSize: '0.9rem', letterSpacing: '1px' }}>SYNCING DATA...</div>
         </div>
       ) : (
-        <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '1rem 0' }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '1rem 0', width: '100%', boxSizing: 'border-box' }}>
 
           {/* ───── Stats Grid ───── */}
           <div className="stat-grid">
@@ -195,12 +209,12 @@ export default function Dashboard() {
                 <div style={{ 
                   width: 48, height: 48, borderRadius: '12px', 
                   background: s.glow, border: `1px solid ${s.glow.replace('0.15', '0.3')}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center' 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                 }}>
                   {s.icon}
                 </div>
-                <div>
-                  <div style={{ color: '#9ca3af', fontSize: '0.85rem', fontWeight: 500, marginBottom: '0.25rem' }}>{s.label}</div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ color: '#9ca3af', fontSize: '0.85rem', fontWeight: 500, marginBottom: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.label}</div>
                   <div style={{ color: '#fff', fontSize: '1.75rem', fontWeight: 700, fontFamily: 'monospace' }}>{s.value}</div>
                 </div>
               </div>
@@ -211,55 +225,59 @@ export default function Dashboard() {
           <div className="chart-grid">
 
             {/* Energy Trend Area Chart */}
-            <div className="glass-panel" style={{ padding: '1.5rem 1.5rem 0.5rem' }}>
+            <div className="glass-panel" style={{ padding: '1.5rem 1.5rem 0.5rem', display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff', fontWeight: 600, marginBottom: '1.5rem', fontSize: '1.1rem' }}>
                 <TrendingUp size={18} color={NEON_CYAN} /> Energy Trend Analysis
               </div>
-              <ResponsiveContainer width="100%" height={260}>
-                <AreaChart data={stats?.chartData || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorEnergy" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={NEON_CYAN} stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor={NEON_CYAN} stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={NEON_GREEN} stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor={NEON_GREEN} stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                  <XAxis dataKey="name" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} dy={10} />
-                  <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Area type="monotone" dataKey="energy" stroke={NEON_CYAN} strokeWidth={2} fillOpacity={1} fill="url(#colorEnergy)" />
-                  <Area type="monotone" dataKey="score" stroke={NEON_GREEN} strokeWidth={2} fillOpacity={1} fill="url(#colorScore)" />
-                </AreaChart>
-              </ResponsiveContainer>
+              <div style={{ flex: 1, minHeight: 260, width: '100%', position: 'relative' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={stats?.chartData || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorEnergy" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={NEON_CYAN} stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor={NEON_CYAN} stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={NEON_GREEN} stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor={NEON_GREEN} stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                    <XAxis dataKey="name" stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} dy={10} />
+                    <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Area type="monotone" dataKey="energy" stroke={NEON_CYAN} strokeWidth={2} fillOpacity={1} fill="url(#colorEnergy)" />
+                    <Area type="monotone" dataKey="score" stroke={NEON_GREEN} strokeWidth={2} fillOpacity={1} fill="url(#colorScore)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
             </div>
 
             {/* Detection Breakdown Pie Chart */}
-            <div className="glass-panel" style={{ padding: '1.5rem' }}>
+            <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff', fontWeight: 600, marginBottom: '1rem', fontSize: '1.1rem' }}>
                 <BarChart3 size={18} color={NEON_GREEN} /> Detection Breakdown
               </div>
-              <ResponsiveContainer width="100%" height={260}>
-                <PieChart>
-                  <Pie
-                    data={stats?.detectionBreakdown || []}
-                    dataKey="value"
-                    innerRadius={70}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    stroke="none"
-                  >
-                    {(stats?.detectionBreakdown || []).map((_, i) => (
-                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '0.85rem', color: '#e5e7eb' }} />
-                </PieChart>
-              </ResponsiveContainer>
+              <div style={{ flex: 1, minHeight: 260, width: '100%', position: 'relative' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={stats?.detectionBreakdown || []}
+                      dataKey="value"
+                      innerRadius={70}
+                      outerRadius={100}
+                      paddingAngle={5}
+                      stroke="none"
+                    >
+                      {(stats?.detectionBreakdown || []).map((_, i) => (
+                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '0.85rem', color: '#e5e7eb' }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
             </div>
 
           </div>
@@ -267,7 +285,7 @@ export default function Dashboard() {
           {/* ───── Recent Analyses Table ───── */}
           <div className="glass-panel" style={{ padding: '0', overflow: 'hidden' }}>
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', flexWrap: 'wrap', gap: '1rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff', fontWeight: 600, fontSize: '1.1rem' }}>
                 <Code2 size={18} color="#a78bfa" /> Recent Analyses
               </div>
@@ -289,7 +307,7 @@ export default function Dashboard() {
             </div>
 
             {history.length > 0 ? (
-              <div style={{ overflowX: 'auto' }}>
+              <div style={{ overflowX: 'auto', width: '100%' }}>
                 <table className="glass-table">
                   <thead>
                     <tr>
@@ -315,7 +333,7 @@ export default function Dashboard() {
                             />
                           </td>
                           <td style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: NEON_CYAN }} />
+                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: NEON_CYAN, flexShrink: 0 }} />
                             {a.language || 'Unknown'}
                           </td>
                           <td style={{ fontFamily: 'monospace', color: '#a78bfa' }}>{a.complexity || 'O(n)'}</td>
@@ -323,12 +341,12 @@ export default function Dashboard() {
                           <td>
                             <span style={{ 
                               background: 'rgba(0, 255, 204, 0.1)', color: NEON_GREEN, 
-                              padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 600 
+                              padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 600, whiteSpace: 'nowrap'
                             }}>
                               {a.sustainabilityScore || 'A+'}
                             </span>
                           </td>
-                          <td style={{ color: '#9ca3af', fontSize: '0.85rem' }}>
+                          <td style={{ color: '#9ca3af', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
                             {new Date(a.timestamp).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
                           </td>
                         </tr>

@@ -44,6 +44,8 @@ const layoutStyles = `
     background: #05050f;
     color: #fff;
     overflow: hidden;
+    width: 100vw;
+    max-width: 100%;
   }
 
   /* SIDEBAR */
@@ -77,6 +79,7 @@ const layoutStyles = `
     align-items: center;
     justify-content: center;
     box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
+    flex-shrink: 0;
   }
 
   .sidebar-nav {
@@ -149,7 +152,8 @@ const layoutStyles = `
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-width: 0;
+    min-width: 0; /* CRITICAL for flexbox overflow prevention */
+    max-width: 100%;
     position: relative;
   }
 
@@ -165,6 +169,8 @@ const layoutStyles = `
     justify-content: space-between;
     padding: 0 2rem;
     z-index: 40;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .page-container {
@@ -172,6 +178,7 @@ const layoutStyles = `
     overflow-y: auto;
     overflow-x: hidden;
     position: relative;
+    width: 100%;
   }
 
   /* Subtly dynamic background for inner pages */
@@ -190,6 +197,7 @@ const layoutStyles = `
     z-index: 10;
     padding: 2rem;
     width: 100%;
+    max-width: 100vw;
     box-sizing: border-box;
   }
 
@@ -204,7 +212,9 @@ const layoutStyles = `
       transform: translateX(0);
     }
     .mobile-menu-btn {
-      display: block !important;
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
       background: none;
       border: none;
       color: #fff;
@@ -213,10 +223,24 @@ const layoutStyles = `
       margin-right: 1rem;
     }
     .glass-topbar {
-      padding: 0 1.25rem;
+      padding: 0 1rem;
     }
     .page-content {
-      padding: 1.5rem 1rem;
+      /* Tighten padding to let widgets breathe on small screens */
+      padding: 1.25rem 0.75rem;
+    }
+  }
+
+  /* EXTRA SMALL PHONES */
+  @media (max-width: 480px) {
+    .hide-on-mobile {
+      display: none !important;
+    }
+    .glass-topbar {
+      padding: 0 0.75rem;
+    }
+    .page-content {
+      padding: 1rem 0.5rem; 
     }
   }
 `;
@@ -321,7 +345,7 @@ export default function AppLayout({ title }) {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{ width: 36, height: 36, borderRadius: '10px', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '1rem', color: '#fff' }}>
+            <div style={{ width: 36, height: 36, borderRadius: '10px', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '1rem', color: '#fff', flexShrink: 0 }}>
               {(user?.avatar || user?.name?.[0] || 'U')}
             </div>
 
@@ -333,7 +357,7 @@ export default function AppLayout({ title }) {
             <button 
               onClick={handleLogout} 
               title="Sign Out"
-              style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#9ca3af', width: 32, height: 32, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}
+              style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#9ca3af', width: 32, height: 32, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0 }}
               onMouseEnter={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)'; e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; }}
               onMouseLeave={e => { e.currentTarget.style.color = '#9ca3af'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.background = 'transparent'; }}
             >
@@ -352,12 +376,12 @@ export default function AppLayout({ title }) {
             <button onClick={() => setOpen(v => !v)} className="mobile-menu-btn" style={{ display: 'none' }}>
               {open ? <X size={24} /> : <Menu size={24} />}
             </button>
-            <span style={{ fontSize: '1.1rem', fontWeight: 600, color: '#fff' }}>{title || 'GreenCode'}</span>
+            <span className="hide-on-mobile" style={{ fontSize: '1.1rem', fontWeight: 600, color: '#fff' }}>{title || 'GreenCode'}</span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <CreditsBadge />
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(0, 255, 204, 0.05)', border: `1px solid rgba(0, 255, 204, 0.2)`, padding: '0.3rem 0.75rem', borderRadius: '100px', fontSize: '0.75rem', fontWeight: 600, color: NEON_GREEN }}>
+            <div className="hide-on-mobile" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(0, 255, 204, 0.05)', border: `1px solid rgba(0, 255, 204, 0.2)`, padding: '0.3rem 0.75rem', borderRadius: '100px', fontSize: '0.75rem', fontWeight: 600, color: NEON_GREEN }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: NEON_GREEN, boxShadow: `0 0 8px ${NEON_GREEN}` }} />
               ONLINE
             </div>

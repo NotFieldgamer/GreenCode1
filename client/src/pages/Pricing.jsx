@@ -102,6 +102,8 @@ const pricingStyles = `
     position: relative;
     backdrop-filter: blur(12px);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .glass-pricing-card:hover {
@@ -127,12 +129,36 @@ const pricingStyles = `
   .faq-btn:hover {
     background: rgba(255, 255, 255, 0.05);
   }
+
+  /* MOBILE RESPONSIVENESS */
+  @media (max-width: 768px) {
+    .glass-pricing-card {
+      padding: 2rem 1.5rem;
+    }
+    
+    .pricing-header-btns {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .faq-btn {
+      padding: 1rem;
+      font-size: 0.95rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .compare-table-cell {
+      padding: 1rem 0.5rem !important;
+      font-size: 0.85rem !important;
+    }
+  }
 `;
 
 function CellValue({ val, color }) {
   if (val === true) return <Check size={18} color={color} style={{ margin: 'auto' }} />;
   if (val === false) return <X size={16} color="rgba(255,255,255,0.2)" style={{ margin: 'auto' }} />;
-  return <span style={{ fontFamily: 'monospace', fontSize: '0.9rem', fontWeight: 600, color: '#e5e7eb' }}>{val}</span>;
+  return <span style={{ fontFamily: 'monospace', fontSize: '0.9rem', fontWeight: 600, color: '#e5e7eb', whiteSpace: 'nowrap' }}>{val}</span>;
 }
 
 export default function Pricing() {
@@ -153,21 +179,21 @@ export default function Pricing() {
   }
   
   return (
-    <div style={{ width: '100%', minHeight: '100vh', background: '#05050f', color: '#fff' }}>
+    <div style={{ width: '100%', minHeight: '100vh', background: '#05050f', color: '#fff', overflowX: 'hidden' }}>
       <style>{pricingStyles}</style>
       
       {/* Dynamic Background */}
       <div style={{ position: 'fixed', inset: 0, background: 'radial-gradient(circle at 50% 0%, rgba(0, 212, 255, 0.05) 0%, transparent 60%)', pointerEvents: 'none' }} />
 
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 2rem', maxWidth: 1200, margin: '0 auto', position: 'relative', zIndex: 10 }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', padding: '1.25rem 1.5rem', maxWidth: 1200, margin: '0 auto', position: 'relative', zIndex: 10 }}>
         <div onClick={() => navigate('/')} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', fontWeight: 700, fontSize: '1.1rem' }}>
-          <div style={{ width: 32, height: 32, background: NEON_GREEN, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 15px ${NEON_GREEN}40` }}>
+          <div style={{ width: 32, height: 32, background: NEON_GREEN, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 15px ${NEON_GREEN}40`, flexShrink: 0 }}>
             <TrendingUp size={18} color="#000" />
           </div>
           GreenCode
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem' }}>
+        <div className="pricing-header-btns" style={{ display: 'flex', gap: '1rem' }}>
           {isAuthenticated ? (
             <button onClick={() => navigate('/dashboard')} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '0.5rem 1.25rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
               Dashboard
@@ -185,23 +211,23 @@ export default function Pricing() {
         </div>
       </header>
 
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '3rem 2rem 5rem', position: 'relative', zIndex: 10 }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '3rem 1.5rem 5rem', position: 'relative', zIndex: 10, width: '100%', boxSizing: 'border-box' }}>
         
         {/* Hero */}
         <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(0, 255, 204, 0.1)', border: `1px solid rgba(0, 255, 204, 0.3)`, borderRadius: 100, padding: '0.4rem 1rem', fontSize: '0.85rem', fontWeight: 600, color: NEON_GREEN, marginBottom: '1.5rem' }}>
             <Shield size={14} /> Simple, transparent pricing
           </div>
-          <h1 style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', fontWeight: 700, marginBottom: '1rem', letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: 'clamp(2.2rem, 6vw, 3.5rem)', fontWeight: 700, marginBottom: '1rem', letterSpacing: '-0.02em' }}>
             Choose Your Impact
           </h1>
-          <p style={{ fontSize: '1.1rem', color: '#9ca3af', maxWidth: 600, margin: '0 auto', lineHeight: 1.6 }}>
+          <p style={{ fontSize: 'clamp(1rem, 2vw, 1.1rem)', color: '#9ca3af', maxWidth: 600, margin: '0 auto', lineHeight: 1.6 }}>
             Start optimizing for free. Upgrade to unlock the AI Code Generator, bulk analysis, and advanced sustainability tracking.
           </p>
         </div>
 
         {/* Pricing Cards Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem', marginBottom: '6rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '2rem', marginBottom: '6rem', width: '100%' }}>
           {PLANS.map(plan => {
             const isCurrent = currentPlan === plan.key;
             const isHighlight = plan.key === 'pro';
@@ -233,18 +259,18 @@ export default function Pricing() {
                 </div>
                 <div style={{ fontSize: '0.9rem', color: '#9ca3af', marginBottom: '2rem', height: '40px' }}>{plan.sub}</div>
 
-                <div style={{ marginBottom: '2.5rem' }}>
-                  <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: '3.5rem', color: '#fff', letterSpacing: '-2px' }}>
+                <div style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'baseline', flexWrap: 'wrap' }}>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 'clamp(2.5rem, 8vw, 3.5rem)', color: '#fff', letterSpacing: '-2px' }}>
                     {plan.price === 0 ? 'Free' : `$${plan.price}`}
                   </span>
-                  {plan.price > 0 && <span style={{ color: '#6b7280', fontSize: '1rem', marginLeft: '0.25rem', fontWeight: 500 }}>/ mo</span>}
+                  {plan.price > 0 && <span style={{ color: '#6b7280', fontSize: '1rem', marginLeft: '0.5rem', fontWeight: 500 }}>/ mo</span>}
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', flex: 1, marginBottom: '2.5rem' }}>
                   {plan.features.map((f, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.95rem', color: f.ok ? '#e5e7eb' : '#6b7280' }}>
                       {f.ok ? <Check size={18} color={plan.accent} style={{ flexShrink: 0 }} /> : <X size={16} color="rgba(255,255,255,0.2)" style={{ flexShrink: 0 }} />}
-                      {f.text}
+                      <span style={{ lineHeight: 1.4 }}>{f.text}</span>
                     </div>
                   ))}
                 </div>
@@ -258,7 +284,8 @@ export default function Pricing() {
                     color: isCurrent ? '#9ca3af' : plan.key === 'free' ? '#fff' : '#000',
                     fontWeight: 700, fontSize: '1rem', cursor: isCurrent || plan.key === 'free' ? 'default' : 'pointer',
                     transition: 'all 0.2s', border: plan.key === 'free' ? '1px solid rgba(255,255,255,0.2)' : 'none',
-                    boxShadow: !isCurrent && plan.key !== 'free' ? `0 4px 15px ${plan.accent}40` : 'none'
+                    boxShadow: !isCurrent && plan.key !== 'free' ? `0 4px 15px ${plan.accent}40` : 'none',
+                    boxSizing: 'border-box'
                   }}
                 >
                   {isCurrent ? 'Current Plan' : plan.key === 'free' ? 'Default Plan' : `Upgrade to ${plan.name}`}
@@ -269,25 +296,25 @@ export default function Pricing() {
         </div>
 
         {/* Feature Comparison Table */}
-        <div style={{ marginBottom: '6rem' }}>
-          <h2 style={{ fontSize: '2rem', fontWeight: 700, textAlign: 'center', marginBottom: '3rem' }}>Compare Features</h2>
-          <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+        <div style={{ marginBottom: '6rem', width: '100%' }}>
+          <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 2rem)', fontWeight: 700, textAlign: 'center', marginBottom: '3rem' }}>Compare Features</h2>
+          <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', overflowX: 'auto', width: '100%' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
               <thead>
                 <tr>
-                  <th style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '1.1rem', width: '40%' }}>Capabilities</th>
-                  <th style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#9ca3af', textAlign: 'center', fontSize: '1.1rem' }}>Free</th>
-                  <th style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', color: NEON_CYAN, textAlign: 'center', fontSize: '1.1rem' }}>Pro</th>
-                  <th style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', color: NEON_PURPLE, textAlign: 'center', fontSize: '1.1rem' }}>Enterprise</th>
+                  <th className="compare-table-cell" style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '1.1rem', width: '40%' }}>Capabilities</th>
+                  <th className="compare-table-cell" style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#9ca3af', textAlign: 'center', fontSize: '1.1rem' }}>Free</th>
+                  <th className="compare-table-cell" style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', color: NEON_CYAN, textAlign: 'center', fontSize: '1.1rem' }}>Pro</th>
+                  <th className="compare-table-cell" style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', color: NEON_PURPLE, textAlign: 'center', fontSize: '1.1rem' }}>Enterprise</th>
                 </tr>
               </thead>
               <tbody>
                 {COMPARISON.map(([feat, free, pro, ent], i) => (
                   <tr key={i} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
-                    <td style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: '0.95rem', color: '#d1d5db', fontWeight: 500 }}>{feat}</td>
-                    <td style={{ padding: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}><CellValue val={free} color="#9ca3af" /></td>
-                    <td style={{ padding: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'center', background: 'rgba(0, 212, 255, 0.02)' }}><CellValue val={pro} color={NEON_CYAN} /></td>
-                    <td style={{ padding: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}><CellValue val={ent} color={NEON_PURPLE} /></td>
+                    <td className="compare-table-cell" style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: '0.95rem', color: '#d1d5db', fontWeight: 500 }}>{feat}</td>
+                    <td className="compare-table-cell" style={{ padding: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}><CellValue val={free} color="#9ca3af" /></td>
+                    <td className="compare-table-cell" style={{ padding: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'center', background: 'rgba(0, 212, 255, 0.02)' }}><CellValue val={pro} color={NEON_CYAN} /></td>
+                    <td className="compare-table-cell" style={{ padding: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}><CellValue val={ent} color={NEON_PURPLE} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -296,8 +323,8 @@ export default function Pricing() {
         </div>
 
         {/* FAQ Section */}
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <h2 style={{ fontSize: '2rem', fontWeight: 700, textAlign: 'center', marginBottom: '3rem' }}>Frequently Asked Questions</h2>
+        <div style={{ maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+          <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 2rem)', fontWeight: 700, textAlign: 'center', marginBottom: '3rem' }}>Frequently Asked Questions</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {FAQS.map((faq, i) => (
               <div key={i} style={{ borderRadius: '12px', overflow: 'hidden', border: faqOpen === i ? `1px solid ${NEON_CYAN}40` : '1px solid rgba(255,255,255,0.08)' }}>
@@ -306,8 +333,8 @@ export default function Pricing() {
                   onClick={() => setFaqOpen(faqOpen === i ? null : i)}
                   style={{ background: faqOpen === i ? 'rgba(0, 212, 255, 0.05)' : 'rgba(255, 255, 255, 0.02)' }}
                 >
-                  {faq.q}
-                  {faqOpen === i ? <ChevronUp size={20} color={NEON_CYAN} /> : <ChevronDown size={20} color="#6b7280" />}
+                  <span style={{ paddingRight: '1rem' }}>{faq.q}</span>
+                  {faqOpen === i ? <ChevronUp size={20} color={NEON_CYAN} style={{ flexShrink: 0 }} /> : <ChevronDown size={20} color="#6b7280" style={{ flexShrink: 0 }} />}
                 </button>
                 {faqOpen === i && (
                   <div style={{ padding: '1.5rem', fontSize: '0.95rem', color: '#9ca3af', lineHeight: 1.6, background: 'rgba(0,0,0,0.3)' }}>
